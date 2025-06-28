@@ -94,6 +94,11 @@ lemma homoSubI_strictMono (n : ℕ) {I J : Ideal (MvPolynomial α F)} (hmd : min
   contrapose! hIJ
   rw [hIJ]
 
+lemma eq_of_minDeg_homoSubI_eq {I J : Ideal (MvPolynomial α F)}
+  (hI : IsSingleDegGen I) (hJ : IsSingleDegGen J) :
+  homogeneousSubmoduleI (minDeg I) I = homogeneousSubmoduleI (minDeg J) J → I = J := by
+    intro h
+    rw [hI, hJ, h]
 
 variable [DecidableEq α]
 
@@ -153,7 +158,177 @@ theorem homoSubI_span_eq {n : ℕ} {S : Set (MvPolynomial α F)} {f : ℕ → Se
     simp only [iSup_iSup_eq_right, iSup_bot, bot_le, sup_of_le_left]
     rw [hS]
 
+open Classical
+theorem homoComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α F)} {S : Set (MvPolynomial α F)}
+  (h : IsSingleDegGen I) (hspan : I = Ideal.span S) :
+  homogeneousSubmoduleI (minDeg I) I ≤ homogeneousSubmoduleI (minDeg I)
+  (Ideal.span ((homogeneousComponent (minDeg I)) '' S)) := by
+    let Sa := ⋃ i : ℕ, (homogeneousComponent i) '' S
+    have hsas : homogeneousSubmoduleI (minDeg I) (Ideal.span ((homogeneousComponent (minDeg I)) '' S))
+    = homogeneousSubmoduleI (minDeg I) (Ideal.span Sa) := by
+      apply homoSubI_span_eq
+      rfl
+
+      intro i hi p hp
+      simp only [SetLike.mem_coe, mem_homogeneousSubmodule]
+      obtain ⟨q, hqS, hq⟩ := hp
+      rw [← hq]
+      exact homogeneousComponent_isHomogeneous i q
+
+      intro i hi p hp
+      obtain ⟨q, hqS, hq⟩ := hp
+      rw [Set.mem_singleton_iff]
+      apply Nat.notMem_of_lt_sInf at hi; rw [Set.mem_setOf] at hi; push_neg at hi
+      suffices p ∈ homogeneousSubmoduleI i I by
+        rw [hi] at this
+        exact this
+      unfold homogeneousSubmoduleI
+      rw [← hq, Submodule.mem_inf]; constructor
+      exact homogeneousComponent_mem i q
+      rw [Submodule.restrictScalars_mem]
+      apply single_deg_gen_homo at h
+      suffices q ∈ I by
+        specialize h i this
+        have hd : (DirectSum.decompose (homogeneousSubmodule α F)) q = DirectSum.Decomposition.decompose' q := by rfl
+        rw [hd, decomposition.decompose'_apply] at h
+        exact h
+      rw [hspan]
+      apply Submodule.subset_span; exact hqS
+
+    rw [hsas]
+    suffices I ≤ Ideal.span Sa by apply homoSubI_monotone (minDeg I) this
+
+    rw [hspan]
+    apply Submodule.span_le.mpr
+    intro p hp
+    apply Submodule.mem_span_set.mpr
+    have hps := sum_homogeneousComponent p
+    have hhcp : Fintype (Set.range (homogeneousComponent . p)) := by
+      let f : Finset.range (p.totalDegree + 2) → (Set.range (homogeneousComponent . p)) := fun i =>
+        ⟨homogeneousComponent i p, by rw [Set.mem_range]; use i⟩
+      apply Fintype.ofSurjective f
+      intro q; let hq := q.2
+      rw [Set.mem_range] at hq
+      obtain ⟨i, hq⟩ := hq
+
+      by_cases hi : i ∈ Finset.range (p.totalDegree + 2)
+      use ⟨i, hi⟩; unfold f;
+      apply Subtype.mk_eq_mk.mpr; rw [Subtype.coe_mk]
+      exact hq
+
+      use ⟨p.totalDegree+1, by
+        apply Finset.mem_range.mpr
+        exact Nat.lt_add_one (p.totalDegree + 1)⟩
+      unfold f; apply Subtype.mk_eq_mk.mpr; rw [Subtype.coe_mk]
+      rw [homogeneousComponent_eq_zero]
+      rw [← hq]; symm
+      apply homogeneousComponent_eq_zero
+      apply Finset.mem_range.not.mp at hi; push_neg at hi
+      apply lt_of_lt_of_le ?_ hi
+      exact Nat.lt_add_of_pos_right (zero_lt_two)
+      exact lt_add_one p.totalDegree
+    let c : MvPolynomial α F →₀ MvPolynomial α F := ⟨(Set.range (homogeneousComponent . p)).toFinset,
+      fun q => if q ∈ Set.range (homogeneousComponent . p) then 1 else 0, by
+        simp only [Set.mem_toFinset, Set.mem_range, ne_eq, ite_eq_right_iff, one_ne_zero, imp_false,
+          not_exists, not_forall, Decidable.not_not, implies_true]
+      ⟩
+    use c; constructor
+    simp only [Set.coe_toFinset, c]
+    intro q hq
+    rw [Set.mem_range] at hq
+    obtain ⟨i, hq⟩ := hq; unfold Sa
+    rw [← hq, Set.mem_iUnion]
+    use i; rw [Set.mem_image]; use p
+
+    unfold Finsupp.sum; rw [← hps]; symm
+    let e : (i : ℕ) → (i ∈ Finset.range (p.totalDegree +1)) → ((homogeneousComponent . p) i ≠ 0) → MvPolynomial α F :=
+      fun i hi hcz => (homogeneousComponent i) p
+    apply Finset.sum_bij_ne_zero e
+
+    intro i h₁ h₂
+    simp only [Set.mem_toFinset, Set.mem_range, c, e]; use i
+
+    intro i h₁₁ h₁₂ j h₂₁ h₂₂ he
+    unfold e at he
+    have hi : ((homogeneousComponent i) p).IsHomogeneous i := by exact homogeneousComponent_isHomogeneous i p
+    have hj : ((homogeneousComponent j) p).IsHomogeneous j := by exact homogeneousComponent_isHomogeneous j p
+    rw [he] at hi
+    apply IsHomogeneous.inj_right hi hj h₂₂
+
+    intro b hb hbz
+    simp only [smul_eq_mul, ne_eq, mul_eq_zero, not_or] at hbz
+    have hcb : c b ≠ 0 := by exact Finsupp.mem_support_iff.mp hb
+    simp only [hcb, not_false_eq_true, true_and] at hbz
+    simp only [Set.mem_toFinset, Set.mem_range, c] at hb
+    obtain ⟨i, hb⟩ := hb; use i
+    rw [← hb] at hbz
+    have hifr : i ∈ Finset.range (p.totalDegree + 1) := by
+      contrapose! hbz
+      apply homogeneousComponent_eq_zero
+      rw [Finset.mem_range.not] at hbz; push_neg at hbz
+      exact hbz
+    use hifr; use hbz
+
+    intro i h₁ h₂
+    simp [smul_eq_mul, c, e]
 
 lemma psi_homo_gen_of_singleDegGen (hI : IsSingleDegGen I) (h : IsPrincipalSymmetric I) :
   ∃ f, f.IsHomogeneous (minDeg I) ∧ I = symmSpan {f} := by
-    sorry
+    obtain ⟨f, h⟩ := h
+    let hIh := single_deg_gen_homo hI
+    by_cases hmd0 : minDeg I = 0
+    let hmd1 := (minDeg_zero_iff hIh).mp hmd0
+    rcases hmd1 with hIT|hIB
+    use 1; constructor; rw [hmd0]
+    exact isHomogeneous_one α F
+    rw [symmSpan_one, hIT]
+
+    use 0; constructor; rw [hmd0]
+    exact isHomogeneous_zero α F 0
+    rw [symmSpan_zero, hIB]
+
+
+    apply minDeg_mem at hmd0; rw [Set.mem_setOf] at hmd0
+    use (homogeneousComponent (minDeg I) f); constructor
+    exact homogeneousComponent_isHomogeneous (minDeg I) f
+    have hssI : symmSpan {homogeneousComponent (minDeg I) f} ≤ I := by
+      unfold symmSpan
+      apply Submodule.span_le.mpr
+      intro f' hf
+      rw [mem_symmSet_singleton] at hf
+      obtain ⟨σ, hf⟩ := hf
+      rw [h, ← hf]
+      apply symmSpan_symm
+      rw [← h]
+      apply single_deg_gen_homo at hI
+      have hfI : f ∈ I := by rw [h]; exact mem_symmSpan_self
+      specialize hI (minDeg I) hfI
+      have hfdd : DirectSum.decompose (homogeneousSubmodule α F) f = DirectSum.Decomposition.decompose' f := by rfl
+      rw [hfdd] at hI
+      rw [decomposition.decompose'_apply] at hI
+      exact hI
+    suffices homogeneousSubmoduleI (minDeg I) I = homogeneousSubmoduleI (minDeg I) (symmSpan {(homogeneousComponent (minDeg I)) f}) by
+      have hss :=  singleDegGen_of_symmSpan (homogeneousComponent_isHomogeneous (minDeg I) f)
+      apply eq_of_minDeg_homoSubI_eq hI hss
+      rw [this]; congr 1
+      have hfz : homogeneousComponent (minDeg I) f ≠ 0 := by
+        contrapose! hmd0
+        rw [this, hmd0, symmSpan_zero, ← Submodule.zero_eq_bot, homoSubI_zero,
+          Submodule.zero_eq_bot]
+
+      rw [symmSpan, minDeg_homo]
+      use homogeneousComponent (minDeg I) f; constructor
+      exact mem_symmSet_singleton_self
+      exact hfz
+      exact symmSet_homo_singleton (homogeneousComponent_isHomogeneous (minDeg I) f)
+
+    suffices homogeneousSubmoduleI (minDeg I) I ≥ homogeneousSubmoduleI (minDeg I)
+      (symmSpan {(homogeneousComponent (minDeg I)) f}) by
+        apply antisymm this
+        suffices ⇑(homogeneousComponent (minDeg I)) '' symmSet {f} = symmSet {(homogeneousComponent (minDeg I)) f} by
+          rw [symmSpan, ← this]
+          exact homoComps_gen_singleDegGen_ideal hI h
+        ext p;
+        simp only [Set.mem_image, mem_symmSet_singleton, exists_exists_eq_and, homoComp_symmAct]
+
+    apply homoSubI_monotone (minDeg I) hssI

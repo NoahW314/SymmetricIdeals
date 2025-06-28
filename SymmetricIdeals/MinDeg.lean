@@ -306,6 +306,21 @@ lemma nonzero_homo_of_minDeg_nonzero (h : minDeg I ≠ 0) : ∃ p ∈ I, p ≠ 0
   rw [h, Ideal.span_empty, Ideal.zero_eq_bot];
   rw [h, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
 
+theorem minDeg_antitone {I J : Ideal (MvPolynomial α F)} (hI : Ideal.IsHomogeneous (homogeneousSubmodule α F) I)
+  (hb : I ≠ ⊥) : I ≤ J →  minDeg I ≥ minDeg J := by
+    intro hIJ
+    by_cases hbt : minDeg I = 0
+    simp only [minDeg_zero_iff hI, hb, or_false] at hbt
+    rw [hbt, top_le_iff] at hIJ
+    rw [hIJ, hbt, minDeg_top]
+
+    apply Nat.sInf_le
+    rw [Set.mem_setOf]
+    let hmd := minDeg_mem hbt
+    rw [Set.mem_setOf, ← bot_lt_iff_ne_bot] at hmd
+    rw [← bot_lt_iff_ne_bot]
+    apply lt_of_lt_of_le hmd (homoSubI_monotone (minDeg I) hIJ)
+
 @[simp] theorem minDeg_homo [DecidableEq α] {n : ℕ} {S : Set (MvPolynomial α F)} (hS : ∃ p ∈ S, p ≠ 0) (h : S ⊆ homogeneousSubmodule α F n) :
 minDeg (Ideal.span S) = n := by
   unfold minDeg

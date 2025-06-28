@@ -30,20 +30,38 @@ instance SymmetricAction : MulSemiringAction (Perm α) (MvPolynomial α F) where
 lemma symmAct_def (σ : Perm α) (p : MvPolynomial α F) : σ • p = rename σ p := by rfl
 
 lemma homo_symmAct (σ : Perm α) {p : MvPolynomial α F} {n : ℕ} (h : p.IsHomogeneous n) : (σ • p).IsHomogeneous n := by
-  simp [IsHomogeneous, IsWeightedHomogeneous]
-  simp [IsHomogeneous, IsWeightedHomogeneous] at h
-  intro d hd
-  have hw : (Finsupp.weight 1) d = (Finsupp.weight (1 : α → ℕ)) (Finsupp.mapDomain (⇑σ.symm) d) := by
-    simp only [Finsupp.weight, LinearMap.toAddMonoidHom_coe, Finsupp.linearCombination_mapDomain,
-      Pi.one_comp]
-  rw [hw]; rw [symmAct_def] at hd
-  apply h
-  let he := coeff_rename_ne_zero (⇑σ) p d hd
-  obtain ⟨e, hed, hep⟩ := he
-  rw [← hed]
-  contrapose! hep; rw [← hep]
-  congr
-  rw [← Finsupp.mapDomain_comp, Equiv.symm_comp_self, Finsupp.mapDomain_id]
+  rw [symmAct_def]
+  apply IsHomogeneous.rename_isHomogeneous h
+
+@[simp] lemma homoComp_symmAct {σ : Perm α} {p : MvPolynomial α F} {n : ℕ} : σ • (homogeneousComponent n p) =
+  homogeneousComponent n (σ • p) := by
+    rw [symmAct_def, symmAct_def]
+    ext d
+    rw [coeff_homogeneousComponent]
+    have he : ∃ e : α →₀ ℕ, Finsupp.mapDomain σ e = d := by
+      use Finsupp.mapDomain σ.symm d
+      rw [← Finsupp.mapDomain_comp, Equiv.self_comp_symm, Finsupp.mapDomain_id]
+    obtain ⟨e, he⟩ := he
+    nth_rw 1 [← he]
+    rw [coeff_rename_mapDomain σ (Equiv.injective σ), coeff_homogeneousComponent]
+    have hed : e.degree = d.degree := by
+      rw [← he]
+      simp only [Finsupp.degree, Finsupp.mapDomain_equiv_apply]
+      apply Finset.sum_bijective σ (Equiv.bijective σ)
+      simp only [Finsupp.mem_support_iff, ne_eq, Finsupp.mapDomain_equiv_apply,
+        Equiv.symm_apply_apply, implies_true]
+      simp only [Finsupp.mem_support_iff, ne_eq, Equiv.symm_apply_apply, implies_true]
+    by_cases hd : d.degree = n
+    rw [hd] at hed
+    simp only [hed, ↓reduceIte, hd]
+    rw [← he, coeff_rename_mapDomain σ (Equiv.injective σ)]
+
+    have hed : ¬e.degree = n := by exact Lean.Grind.ne_of_ne_of_eq_left hed hd
+    simp only [hed, ↓reduceIte, hd]
+
+lemma symm_monomial {σ : Equiv.Perm α} {d : α →₀ ℕ} {c : F} : σ • (monomial d c) =
+  monomial (Finsupp.mapDomain σ d) c := by
+    simp only [symmAct_def, rename_monomial]
 
 noncomputable def IsSymmetricI (I : Ideal (MvPolynomial α F)) :=
   ∀ σ : Perm α, ∀ f ∈ I, σ • f ∈ I
@@ -73,6 +91,10 @@ def symmSpan (S : Set (MvPolynomial α F)) : Ideal (MvPolynomial α F) := Ideal.
 @[simp] lemma mem_symmSet_singleton {p q : MvPolynomial α F} : q ∈ symmSet {p} ↔ ∃ σ : Perm α, σ • p = q := by
   simp only [symmSet, Set.image_singleton, Set.iUnion_singleton_eq_range, Set.mem_range]
 
+@[simp] lemma mem_symmSet_singleton_self {p : MvPolynomial α F} : p ∈ symmSet {p} := by
+  rw [mem_symmSet_singleton]
+  use 1; apply one_smul
+
 @[simp] lemma symmSet_symm {S : Set (MvPolynomial α F)} {σ : Perm α} : (rename σ) '' (symmSet S) = symmSet S := by
   ext f; constructor
   intro h
@@ -99,6 +121,8 @@ def symmSpan (S : Set (MvPolynomial α F)) : Ideal (MvPolynomial α F) := Ideal.
 
 @[simp] lemma symmSet_zero : symmSet {(0 : MvPolynomial α F)} = {0} := by
   simp only [symmSet, Set.image_singleton, smul_zero, Set.iUnion_singleton_eq_range, Set.range_const]
+@[simp] lemma symmSet_one : symmSet {(1 : MvPolynomial α F)} = {1} := by
+  simp only [symmSet, Set.image_singleton, smul_one, Set.iUnion_singleton_eq_range, Set.range_const]
 
 lemma zero_notMem_nonzero_symmSet {f : MvPolynomial α F} (h : f ≠ 0) : 0 ∉ symmSet {f} := by
   contrapose! h
@@ -115,6 +139,9 @@ lemma symmSet_homo_singleton {n : ℕ} {p : MvPolynomial α F} (h : p.IsHomogene
   rw [← hq]; simp only [SetLike.mem_coe, mem_homogeneousSubmodule]
   apply homo_symmAct σ h
 
+lemma symmSet_singleton_eq_range {p : MvPolynomial α F} : symmSet {p} = Set.range (fun σ : Equiv.Perm α => σ • p) := by
+  simp only [symmSet, Set.image_singleton, Set.iUnion_singleton_eq_range]
+
 lemma symmSpan_symm {S : Set (MvPolynomial α F)} : IsSymmetricI (symmSpan S) := by
   apply is_symm_iff_stable_image.mpr
   intro σ; unfold symmSpan
@@ -122,6 +149,13 @@ lemma symmSpan_symm {S : Set (MvPolynomial α F)} : IsSymmetricI (symmSpan S) :=
 @[simp] lemma symmSpan_zero : symmSpan {(0 : MvPolynomial α F)} = ⊥ := by
   unfold symmSpan
   rw [symmSet_zero, Ideal.span_singleton_eq_bot]
+@[simp] lemma symmSpan_one : symmSpan {(1 : MvPolynomial α F)} = ⊤ := by
+  rw [symmSpan, symmSet_one, Ideal.span_singleton_eq_top]
+  exact isUnit_one
+
+lemma mem_symmSpan_self {p : MvPolynomial α F} : p ∈ symmSpan {p} := by
+  apply Submodule.subset_span
+  exact mem_symmSet_singleton_self
 
 
 noncomputable def IsPrincipalSymmetric (I : Ideal (MvPolynomial α F)) := ∃ f : MvPolynomial α F,
@@ -132,3 +166,8 @@ lemma psi_is_symm {I : Ideal (MvPolynomial α F)} : IsPrincipalSymmetric I → I
   obtain ⟨f, h⟩ := h
   rw [h]
   exact symmSpan_symm
+
+lemma top_is_psi : IsPrincipalSymmetric (⊤ : Ideal (MvPolynomial α F)) := by
+  use 1; symm; exact symmSpan_one
+lemma bot_is_psi : IsPrincipalSymmetric (⊥ : Ideal (MvPolynomial α F)) := by
+  use 0; symm; exact symmSpan_zero
