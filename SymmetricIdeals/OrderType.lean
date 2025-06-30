@@ -9,88 +9,64 @@ open Equiv (Perm)
 variable {F : Type*} [CommSemiring F]
 variable {α : Type*}
 
-def orderType (d : α →₀ ℕ) : Nat.Partition (d.degree) := ⟨
-    Multiset.map d d.support.val,
-    by
-    intro i hi
-    simp only [Multiset.mem_map, Finset.mem_val, Finsupp.mem_support_iff] at hi
-    obtain ⟨a, haz, hai⟩ := hi
-    rw [← hai]
-    exact Nat.zero_lt_of_ne_zero haz
-    ,
-    by rw [Finsupp.degree, Finset.sum_map_val]⟩
 
---def orderType (d : α →₀ ℕ) := Multiset.map d d.support.val
+def orderType (d : α →₀ ℕ) := Multiset.map d d.support.val
 
-/-
-lemma exists_set_card {n : ℕ} (hα : n ≤ Nat.card α ∨ Infinite α) : ∃ p : Set α, Cardinal.mk ↑p = n := by
-  rw [← Cardinal.le_mk_iff_exists_set]
-  rcases hα with hα | hα
+@[simp] lemma orderType_zero : orderType (0 : α →₀ ℕ) = ∅ := by
+  simp only [orderType, Finsupp.support_zero, Finset.empty_val, Finsupp.coe_zero, Pi.zero_apply,
+    Multiset.map_zero, Multiset.empty_eq_zero]
 
-  suffices Nat.card α ≤ Cardinal.mk α by apply le_trans (Nat.cast_le.mpr hα) this
-  by_cases h : (Nonempty (Finite α))
-  obtain ⟨h⟩ := h
-  apply le_of_eq
-  exact Nat.cast_card
-
-  suffices Nat.card α = 0 by rw [this]; apply zero_le
-  suffices Infinite α by exact Nat.card_eq_zero_of_infinite
-  refine not_finite_iff_infinite.mp ?_
-  contrapose! h
-  exact Nonempty.intro h
-
-  apply le_trans ?_ (Cardinal.aleph0_le_mk α)
-  apply le_of_lt (Cardinal.nat_lt_aleph0 n)
-
-open Classical
-lemma exists_mono_of_orderType {n : ℕ} (a : Nat.Partition n) (hα : a.parts.sizeOf ≤ Nat.card α ∨ Infinite α) :
-  ∃ d : α →₀ ℕ, (orderType d).parts = a.parts := by
-    obtain ⟨S, hcard⟩ := exists_set_card hα
-    let L : List ℕ := Classical.choose (Quot.exists_rep a.parts)
-    have hfS : Finite S := by
-      refine Cardinal.mk_lt_aleph0_iff.mp ?_
-      rw [hcard]
-      exact Cardinal.nat_lt_aleph0 a.parts.sizeOf
-    have hftS : Fintype S := by exact Set.Finite.fintype hfS
-    obtain ⟨f, f', hlif, rif⟩ := hfS
-    let supp := {x : S | L[(f x)]! ≠ 0}
-    have hsuppFin : Fintype supp := by exact setFintype supp
-    use ⟨supp.toFinset, fun x : α => if hx : x ∈ S then L[(f ⟨x, hx⟩)]! else 0,
-      by
-      simp only [Fin.getElem!_fin, List.getElem!_eq_getElem?_getD, Nat.default_eq_zero, ne_eq,
-        Set.toFinset_setOf, Finset.pure_def, Finset.bind_def, Finset.sup_singleton_apply,
-        Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and, Subtype.exists,
-        exists_and_right, exists_eq_right, dite_eq_right_iff, not_forall, implies_true, supp]
-      ⟩
-    rw [← Classical.choose_spec (Quot.exists_rep a.parts)]
-    simp [orderType, L]
-
-    sorry
-
-noncomputable
-def partMono {n : ℕ} (a : Nat.Partition n) (hα : a.parts.sizeOf ≤ Nat.card α ∨ Infinite α) :=
-  Classical.choose (exists_mono_of_orderType a hα)
--/
+lemma orderType_empty_iff {d : α →₀ ℕ} : orderType d = ∅ ↔ d = 0 := by
+  constructor;
+  simp only [orderType, Multiset.empty_eq_zero, Multiset.map_eq_zero, Finset.val_eq_zero,
+    Finsupp.support_eq_empty, imp_self]
+  intro h; rw [h]; exact orderType_zero
 
 
-def stronglyHomogeneous {n : ℕ} (p : MvPolynomial α F) (a : Nat.Partition n) :=
-  ∀ ⦃d⦄, coeff d p ≠ 0 → (orderType d).parts = a.parts
 
 
-lemma isHomogeneous_of_stronglyHomogeneous {n : ℕ} {p : MvPolynomial α F} (a : Nat.Partition n) :
-  stronglyHomogeneous p a → p.IsHomogeneous n := by
+def stronglyHomogeneous (p : MvPolynomial α F) (a : Multiset ℕ) :=
+  ∀ ⦃d⦄, coeff d p ≠ 0 → (orderType d) = a
+
+lemma stronglyHomogeneous_constant [DecidableEq α] {c : F} : stronglyHomogeneous (C c : MvPolynomial α F) ∅ := by
+  simp only [stronglyHomogeneous, coeff_C, ne_eq, ite_eq_right_iff, Classical.not_imp,
+    Multiset.empty_eq_zero, and_imp, forall_eq', orderType_zero, implies_true]
+
+@[simp] lemma stronglyHomogeneous_one [DecidableEq α] : stronglyHomogeneous (1 : MvPolynomial α F) 0 := by
+  apply stronglyHomogeneous_constant
+
+lemma stronglyHomogeneous_empty_iff [DecidableEq α] {p : MvPolynomial α F} : stronglyHomogeneous p ∅ ↔ ∃ c : F, p = C c := by
+  constructor;
+  intro h; unfold stronglyHomogeneous at h
+  use coeff 0 p
+  ext d; rw [coeff_C]
+  by_cases hd : 0 = d
+  simp only [hd, ↓reduceIte]
+  simp only [hd, ↓reduceIte]
+  contrapose! h; use d; constructor; exact h
+  contrapose! hd; symm
+  exact orderType_empty_iff.mp hd
+
+  intro h; obtain ⟨c, h⟩ := h
+  rw [h]; exact stronglyHomogeneous_constant
+
+
+
+lemma orderType_sum_eq_degree {d : α →₀ ℕ} : (orderType d).sum = d.degree := by
+  simp only [orderType, Finset.sum_map_val, Finsupp.degree]
+
+lemma isHomogeneous_of_stronglyHomogeneous {p : MvPolynomial α F} (a : Multiset ℕ) :
+  stronglyHomogeneous p a → p.IsHomogeneous (Multiset.sum a) := by
     intro h d hd
     specialize h hd
-    let hd2 := (orderType d).parts_sum
     have hdd : (Finsupp.weight 1) d = d.degree := by
       simp only [Finsupp.weight, Finsupp.linearCombination, Pi.one_apply,
         LinearMap.toAddMonoidHom_coe, Finsupp.coe_lsum, LinearMap.coe_smulRight, LinearMap.id_coe,
         id_eq, smul_eq_mul, mul_one, Finsupp.degree]
       rfl
-    rw [hdd, ← hd2, ← a.parts_sum]
-    exact congrArg Multiset.sum h
+    rw [← h, orderType_sum_eq_degree, hdd]
 
-lemma sum_stronglyHomogeneous {n : ℕ} (a : Nat.Partition n) {p q : MvPolynomial α F} :
+lemma sum_stronglyHomogeneous (a : Multiset ℕ) {p q : MvPolynomial α F} :
   stronglyHomogeneous p a → stronglyHomogeneous q a → stronglyHomogeneous (p+q) a := by
     intro hp hq
     simp_all only [stronglyHomogeneous, coeff_add]
@@ -103,13 +79,13 @@ lemma sum_stronglyHomogeneous {n : ℕ} (a : Nat.Partition n) {p q : MvPolynomia
     exact hp hpz
     exact hq hqz
 
-lemma zero_stronglyHomogeneous {n : ℕ} (a : Nat.Partition n) : stronglyHomogeneous (0 : MvPolynomial α F) a := by
+lemma zero_stronglyHomogeneous (a : Multiset ℕ) : stronglyHomogeneous (0 : MvPolynomial α F) a := by
   simp only [stronglyHomogeneous, coeff_zero, ne_eq, not_true_eq_false, IsEmpty.forall_iff,
     implies_true]
 
 variable {F : Type*} [Field F]
 
-lemma smul_stronglyHomogeneous {n : ℕ} (a : Nat.Partition n) (c : F) {p : MvPolynomial α F} :
+lemma smul_stronglyHomogeneous (a : Multiset ℕ) (c : F) {p : MvPolynomial α F} :
   stronglyHomogeneous p a → stronglyHomogeneous (c • p) a := by
     by_cases hc : c = 0
     rw [hc, zero_smul]; intro hp
@@ -120,37 +96,20 @@ lemma smul_stronglyHomogeneous {n : ℕ} (a : Nat.Partition n) (c : F) {p : MvPo
     apply (mul_ne_zero_iff_left hc).mp at hd
     exact hp hd
 
-lemma stronglyHomogeneous_eq' {n m : ℕ} {a : Nat.Partition n} {b : Nat.Partition m}
-  (h : a.parts = b.parts) {p : MvPolynomial α F} : stronglyHomogeneous p a → stronglyHomogeneous p b := by
-
-    sorry
-
-lemma stronglyHomogeneous_eq {n m : ℕ} {a : Nat.Partition n} {b : Nat.Partition m}
-  (h : a.parts = b.parts) {p : MvPolynomial α F} : stronglyHomogeneous p a ↔ stronglyHomogeneous p b := by
-    constructor; exact stronglyHomogeneous_eq' h
-    symm at h; exact stronglyHomogeneous_eq' h
-
-
 -- TODO: can we use orderType to place another grading on MvPolynomial?
-def orderTypeComponent (α F : Type*) [Field F] {n : ℕ} (a : Nat.Partition n) : Submodule F (MvPolynomial α F) :=
+def orderTypeComponent (α F : Type*) [Field F] (a : Multiset ℕ) : Submodule F (MvPolynomial α F) :=
   ⟨⟨⟨{p : MvPolynomial α F | stronglyHomogeneous p a}, by
     simp only [Set.mem_setOf_eq]; exact sum_stronglyHomogeneous a⟩, by
     simp only [Set.mem_setOf_eq]; exact zero_stronglyHomogeneous a⟩, by
     simp only [Set.mem_setOf_eq]; exact smul_stronglyHomogeneous a⟩
 
-@[simp] lemma mem_orderTypeComponent {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n} :
+@[simp] lemma mem_orderTypeComponent {p : MvPolynomial α F} {a : Multiset ℕ} :
   p ∈ orderTypeComponent α F a ↔ stronglyHomogeneous p a := by
     simp only [orderTypeComponent, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk,
       Set.mem_setOf_eq]
 
-lemma orderTypeComponent_eq {n m : ℕ} {a : Nat.Partition n} {b : Nat.Partition m}
-  (h : a.parts = b.parts) : orderTypeComponent α F a = orderTypeComponent α F b := by
-    ext p; rw [mem_orderTypeComponent, mem_orderTypeComponent]
-    exact stronglyHomogeneous_eq h
 
-
-
-lemma symm_parts (σ : Perm α) (d : α →₀ ℕ) : (orderType (Finsupp.mapDomain (⇑σ) d)).parts = (orderType d).parts := by
+lemma symm_orderType (σ : Perm α) (d : α →₀ ℕ) : orderType (Finsupp.mapDomain (⇑σ) d) = orderType d := by
   simp only [orderType]
   let i : (x : α) → x ∈ (Finsupp.mapDomain (⇑σ) d).support.val → α := fun x hx => (Equiv.symm σ) x
   refine Multiset.map_eq_map_of_bij_of_nodup ⇑(Finsupp.mapDomain (⇑σ) d) ⇑d ?_ ?_ i ?_ ?_ ?_ ?_
@@ -180,23 +139,21 @@ lemma symm_parts (σ : Perm α) (d : α →₀ ℕ) : (orderType (Finsupp.mapDom
   intro x hx; unfold i
   rw [Finsupp.mapDomain_equiv_apply]
 
-lemma stronglyHomogeneous_symm {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n} (σ : Perm α) :
+lemma stronglyHomogeneous_symm {p : MvPolynomial α F} {a : Multiset ℕ} (σ : Perm α) :
   stronglyHomogeneous p a → stronglyHomogeneous (σ • p) a := by
     intro h d hd
     apply coeff_rename_ne_zero at hd
     obtain ⟨u, hud, hu⟩ := hd
     specialize h hu
     rw [← hud, ← h]
-    exact symm_parts σ u
+    exact symm_orderType σ u
 
-lemma orderTypeComponent_symm {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n} (σ : Perm α) :
+lemma orderTypeComponent_symm {p : MvPolynomial α F} {a : Multiset ℕ} (σ : Perm α) :
   p ∈ orderTypeComponent α F a → σ • p ∈ orderTypeComponent α F a := by
     rw [mem_orderTypeComponent, mem_orderTypeComponent]
     exact stronglyHomogeneous_symm σ
 
-
-
-lemma subset_orderTypeComponent {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n} (hp : stronglyHomogeneous p a) :
+lemma subset_orderTypeComponent {p : MvPolynomial α F} {a : Multiset ℕ} (hp : stronglyHomogeneous p a) :
   symmSpan {p} ≤ Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F)) := by
     unfold symmSpan
     apply Ideal.span_le.mpr
@@ -209,24 +166,24 @@ lemma subset_orderTypeComponent {n : ℕ} {p : MvPolynomial α F} {a : Nat.Parti
     rw [← hq]
     exact orderTypeComponent_symm σ hp
 
-lemma orderTypeComponent_subset_homoSub {n : ℕ} (a : Nat.Partition n) :
-  ((orderTypeComponent α F a) : Set (MvPolynomial α F)) ⊆ ↑(homogeneousSubmodule α F n) := by
+lemma orderTypeComponent_subset_homoSub (a : Multiset ℕ) :
+  ((orderTypeComponent α F a) : Set (MvPolynomial α F)) ⊆ ↑(homogeneousSubmodule α F a.sum) := by
     intro q
     simp only [SetLike.mem_coe, mem_orderTypeComponent, mem_homogeneousSubmodule]
     exact isHomogeneous_of_stronglyHomogeneous a
 
 variable [DecidableEq α]
 
-lemma minDeg_orderTypeComponent {n : ℕ} {a : Nat.Partition n} (h : ∃ p ∈ (orderTypeComponent α F a), p ≠ 0) :
-  minDeg (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) = n := by
+lemma minDeg_orderTypeComponent {a : Multiset ℕ} (h : ∃ p ∈ (orderTypeComponent α F a), p ≠ 0) :
+  minDeg (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) = a.sum := by
     apply minDeg_homo h (orderTypeComponent_subset_homoSub a)
 
-lemma homoSubI_orderTypeComponent {n : ℕ} (a : Nat.Partition n) :
+lemma homoSubI_orderTypeComponent (a : Multiset ℕ) :
   homogeneousSubmoduleI (minDeg (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))))
   (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) = orderTypeComponent α F a := by
     by_cases hp : ∃ p ∈ (orderTypeComponent α F a), p ≠ 0
     rw [minDeg_orderTypeComponent hp]
-    rw [homoSubI_span n ((orderTypeComponent α F a) : Set (MvPolynomial α F)) (orderTypeComponent_subset_homoSub a)]
+    rw [homoSubI_span a.sum ((orderTypeComponent α F a) : Set (MvPolynomial α F)) (orderTypeComponent_subset_homoSub a)]
     exact Submodule.span_eq (orderTypeComponent α F a)
 
     push_neg at hp
@@ -236,39 +193,163 @@ lemma homoSubI_orderTypeComponent {n : ℕ} (a : Nat.Partition n) :
       Submodule.zero_eq_bot, minDeg_bot]
     rw [← Submodule.zero_eq_bot, ← Submodule.zero_eq_bot, homoSubI_zero]
 
-lemma singleDegGen_orderTypeComponent {n : ℕ} (a : Nat.Partition n) : IsSingleDegGen (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) := by
+lemma singleDegGen_orderTypeComponent (a : Multiset ℕ) : IsSingleDegGen (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) := by
   apply singleDegGen_iff.mpr
-  use n; use orderTypeComponent α F a; constructor
+  use a.sum; use orderTypeComponent α F a; constructor
   exact orderTypeComponent_subset_homoSub a
   rfl
 
+lemma stronglyHomogeneous_monomial_iff {a : Multiset ℕ} {d : α →₀ ℕ} {c : F} (hc : c ≠ 0) :
+  stronglyHomogeneous (monomial d c) a ↔ orderType d = a := by
+    simp only [stronglyHomogeneous, coeff_monomial, ne_eq, ite_eq_right_iff, hc, imp_false,
+      Decidable.not_not, forall_eq']
 
-lemma monomials_basis_orderTypeComponent {n : ℕ} {a : Nat.Partition n} :
+open Classical
+lemma monomials_span_orderTypeComponent {a : Multiset ℕ} :
   orderTypeComponent α F a = Submodule.span F ((fun d => (monomial d (1 : F)))
-  '' {d : α →₀ ℕ | stronglyHomogeneous (monomial d (1 : F)) a}) := by
+  '' {d : α →₀ ℕ | orderType d = a}) := by
+    suffices orderTypeComponent α F a ≤ Submodule.span F ((fun d => (monomial d (1 : F)))
+    '' {d : α →₀ ℕ | orderType d = a}) by
+      apply antisymm this
+      apply Submodule.span_le.mpr
+      intro p; simp only [Set.mem_image, Set.mem_setOf_eq, SetLike.mem_coe, mem_orderTypeComponent,
+        forall_exists_index, and_imp]
+      intro d hd hp
+      rw [← hp]
+      exact (stronglyHomogeneous_monomial_iff (one_ne_zero)).mpr hd
+    intro p hp
+    rw [mem_orderTypeComponent] at hp
+    unfold stronglyHomogeneous at hp
+    rw [as_sum p]
+    apply Submodule.sum_mem
+    intro d hd
+    have hm : monomial d (1 : F) ∈ Submodule.span F ((fun d => (monomial d (1 : F)))
+    '' {d : α →₀ ℕ | orderType d = a}) := by
+      apply Submodule.subset_span
+      simp only [Set.mem_image, Set.mem_setOf_eq, ne_eq, one_ne_zero, not_false_eq_true,
+        monomial_left_inj, exists_eq_right]
+      apply hp
+      exact Finsupp.mem_support_iff.mp hd
+    apply Submodule.smul_mem _ (coeff d p) at hm
+    rw [smul_monomial, smul_eq_mul, mul_one] at hm
+    exact hm
 
-    sorry
 
-lemma exists_perm_of_monomial (d e : α →₀ ℕ) (h : (orderType d).parts = (orderType e).parts) :
-∃ σ : Equiv.Perm α, Finsupp.mapDomain σ d = e := by
 
-  sorry
+lemma permutation_of_orderType_eq' {n : ℕ} : ∀ d e : α →₀ ℕ, (orderType d).card = n →
+  orderType d = orderType e → ∃ σ : Equiv.Perm α, Finsupp.mapDomain σ e = d := by
+    induction n with
+    | zero =>
+    intro d e hc hde
+    rw [Multiset.card_eq_zero, ← Multiset.empty_eq_zero] at hc
+    rw [hc] at hde; symm at hde
+    rw [orderType_empty_iff] at hc; rw [orderType_empty_iff] at hde
+    rw [hc, hde];
+    use 1; simp only [Perm.coe_one, Finsupp.mapDomain_zero]
 
-def monomial_symmSpan_is_orderTypeComponent (p : MvPolynomial α F) := ∃ d : α →₀ ℕ, p = monomial d (1 : F) ∧
-  symmSpan {monomial d (1 : F)} = Ideal.span (orderTypeComponent α F (orderType d))
+    | succ n h =>
+    intro d e hc hde
 
-lemma monomial_symmSpan_orderTypeComponent' (d : α →₀ ℕ) (c : F) : monomial_symmSpan_is_orderTypeComponent (monomial d c) := by
-  apply induction_on_monomial
-  sorry
-  sorry
+    let hc : 0 < (orderType e).card := by
+      rw [hde] at hc
+      exact Nat.lt_of_sub_eq_succ hc
+    rw [Multiset.card_pos_iff_exists_mem] at hc
+    obtain ⟨i, hi⟩ := hc
+    rw [orderType, Multiset.mem_map] at hi
+    obtain ⟨y, hy, hi⟩ := hi
 
-lemma monomial_symmSpan_orderTypeComponent {n : ℕ} {a : Nat.Partition n} {d : α →₀ ℕ}
-  (h : stronglyHomogeneous (monomial d (1 : F)) a) :
-  symmSpan {monomial d (1 : F)} = Ideal.span (orderTypeComponent α F a) := by
-    /-apply antisymm (subset_orderTypeComponent h)
-    rw [Ideal.span, Submodule.span_le, monomials_basis_orderTypeComponent, symmSpan,
+    have hey : e y ∈ orderType e := by rw [orderType, Multiset.mem_map]; use y
+    rw [← hde, orderType, Multiset.mem_map] at hey
+    obtain ⟨x, hx, hxy⟩ := hey
+    let d' : α →₀ ℕ := ⟨d.support \ {x}, fun z : α => if z = x then 0 else d z, by
+      simp only [Finset.mem_sdiff, Finsupp.mem_support_iff, ne_eq, Finset.mem_singleton, And.comm,
+        ite_eq_left_iff, Classical.not_imp, implies_true]⟩
+    let e' : α →₀ ℕ := ⟨e.support \ {y}, fun z : α => if z = y then 0 else e z, by
+      simp only [Finset.mem_sdiff, Finsupp.mem_support_iff, ne_eq, Finset.mem_singleton, And.comm,
+        ite_eq_left_iff, Classical.not_imp, implies_true]⟩
+    specialize h d' e' ?_ ?_
+    simp [orderType, d']; simp [orderType] at hc
+    rw [Multiset.card_erase_of_mem]
+    simp [hc]
+    exact hx
+
+    simp [orderType, d', e']
+    simp [orderType] at hde
+    have hd1 : ∀ z ∈ (d.support.val.erase x), (fun z => if z = x then 0 else d z) z = d z := by
+      intro z hz; apply Finset.ne_of_mem_erase at hz
+      simp only [hz, ↓reduceIte]
+    have he1 : ∀ z ∈ (e.support.val.erase y), (fun z => if z = y then 0 else e z) z = e z := by
+      intro z hz; apply Finset.ne_of_mem_erase at hz
+      simp only [hz, ↓reduceIte]
+
+    rw [Multiset.map_congr rfl hd1, Multiset.map_congr rfl he1]
+    rw [Multiset.map_erase_of_mem _ _ hx, Multiset.map_erase_of_mem _ _ hy]
+    rw [hde, hxy]
+
+
+    obtain ⟨τ, hτ⟩ := h
+    have hτx : e' (Equiv.symm τ x) = 0 := by
+      rw [Finsupp.ext_iff] at hτ; specialize hτ x
+      rw [Finsupp.mapDomain_equiv_apply] at hτ
+      rw [hτ, ← Finsupp.notMem_support_iff]
+      simp [d']
+    have hes : e.support = e'.support ∪ {y} := by
+      simp only [Finset.sdiff_union_self_eq_union, Finset.left_eq_union,
+        Finset.singleton_subset_iff, e']
+      exact hy
+    let π : Equiv.Perm α := Equiv.swap y (Equiv.symm τ x)
+    use (τ * π); ext z
+    rw [Finsupp.mapDomain_equiv_apply]
+    have hs : Equiv.symm (τ * π) = (Equiv.symm π)*(Equiv.symm τ) := by rfl
+    rw [hs]; unfold π
+    rw [Finsupp.ext_iff] at hτ; specialize hτ z
+    rw [Finsupp.mapDomain_equiv_apply] at hτ
+    unfold e' d' at hτ
+    simp at hτ
+    simp [Equiv.swap_apply_def]
+    symm at hxy
+
+    by_cases hzx : z = x
+    simp [hzx]
+    by_cases hsxy : Equiv.symm τ x = y
+    simp [hsxy]; exact hxy
+    simp [hsxy]; exact hxy
+
+    simp [hzx]; simp [hzx] at hτ
+    by_cases hzd : z ∈ d.support
+    suffices (Equiv.symm τ) z ≠ y by simp [this]; simp [this] at hτ; exact hτ
+    rw [Finsupp.mem_support_iff] at hzd
+    contrapose! hzd; simp [hzd] at hτ
+    symm; exact hτ
+
+    rw [Finsupp.notMem_support_iff] at hzd
+    rw [hzd]; simp [hzd] at hτ
+    by_cases hzy : Equiv.symm τ z = y
+    simp [hzy]
+    rw [← Finsupp.notMem_support_iff, hes]
+    simp; constructor; exact hτx
+    rw [← hzy]; contrapose! hzx; symm
+    apply_fun τ at hzx
+    simp at hzx; exact hzx
+
+    simp [hzy]; exact hτ hzy
+
+
+
+
+lemma permutation_of_orderType_eq (d e : α →₀ ℕ) : orderType d = orderType e →
+  ∃ σ : Equiv.Perm α, Finsupp.mapDomain σ e = d := by
+    have hd : (orderType d).card = (orderType d).card := rfl
+    exact permutation_of_orderType_eq' d e hd
+
+lemma monomial_symmSpan_orderTypeComponent {d : α →₀ ℕ} :
+  symmSpan {monomial d (1 : F)} = Ideal.span (orderTypeComponent α F (orderType d)) := by
+    have hd : stronglyHomogeneous (monomial d (1 : F)) (orderType d) := by
+      rw [stronglyHomogeneous_monomial_iff]; exact one_ne_zero
+    apply antisymm (subset_orderTypeComponent hd)
+    rw [Ideal.span, Submodule.span_le, monomials_span_orderTypeComponent, symmSpan,
       Ideal.span]
-    suffices Submodule.span F ((fun d => (monomial d (1 : F))) '' {d : α →₀ ℕ | stronglyHomogeneous (monomial d (1 : F)) a}) ≤ Submodule.span F (symmSet {monomial d (1 : F)}) by
+    suffices Submodule.span F ((fun d => (monomial d (1 : F))) '' {e : α →₀ ℕ | orderType e = orderType d}) ≤ Submodule.span F (symmSet {monomial d (1 : F)}) by
       apply subset_trans this
       apply Submodule.span_le_restrictScalars
     apply Submodule.span_mono
@@ -276,18 +357,14 @@ lemma monomial_symmSpan_orderTypeComponent {n : ℕ} {a : Nat.Partition n} {d : 
     simp only [Set.mem_image, Set.mem_setOf_eq, mem_symmSet_singleton,
       forall_exists_index, and_imp, symm_monomial]
     intro e hmsh hem
-    rw [← hem];
-    --let σ : Equiv.Perm α := ⟨fun x : α => , sorry, sorry, sorry⟩
-    sorry-/
+    rw [← hem]
+    obtain ⟨σ, hσ⟩ := permutation_of_orderType_eq e d hmsh
+    use σ; rw [hσ]
 
-    obtain ⟨e, hed, hspan⟩ := monomial_symmSpan_orderTypeComponent' d (1 : F)
-    apply monomial_left_injective (one_ne_zero) at hed;
-    rw [hed, hspan, ← hed]; congr
-    sorry
 
-lemma exists_monomial_symmSpan_orderTypeComponent {n : ℕ} {a : Nat.Partition n}
+lemma exists_monomial_symmSpan_orderTypeComponent {a : Multiset ℕ}
   (h : ∃ p : MvPolynomial α F, p ≠ 0 ∧ stronglyHomogeneous p a) :
-  ∃ d : α →₀ ℕ, symmSpan {monomial d (1 : F)} = Ideal.span (orderTypeComponent α F a) := by
+  ∃ d : α →₀ ℕ, Ideal.span (orderTypeComponent α F a) = symmSpan {monomial d (1 : F)} := by
     obtain ⟨p, hpz, hpsh⟩ := h
     rw [MvPolynomial.ne_zero_iff] at hpz
     obtain ⟨d, hpd⟩ := hpz
@@ -298,18 +375,20 @@ lemma exists_monomial_symmSpan_orderTypeComponent {n : ℕ} {a : Nat.Partition n
       rw [← he]
       exact hpsh hpd
     use d
-    exact monomial_symmSpan_orderTypeComponent hd
+    rw [stronglyHomogeneous_monomial_iff] at hd
+    rw [← hd]; symm
+    exact monomial_symmSpan_orderTypeComponent
+    exact one_ne_zero
 
-lemma psi_orderTypeComponent' {n : ℕ} {a : Nat.Partition n} :
+lemma psi_orderTypeComponent' {a : Multiset ℕ} :
   (∃ (p : MvPolynomial α F), p ≠ 0 ∧ stronglyHomogeneous p a) →
   IsPrincipalSymmetric (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) := by
     intro h
     apply exists_monomial_symmSpan_orderTypeComponent at h
     obtain ⟨d, h⟩ := h
-    use (monomial d (1 : F)); symm
-    exact h
+    use (monomial d (1 : F));
 
-lemma psi_orderTypeComponent {n : ℕ} (a : Nat.Partition n) :
+lemma psi_orderTypeComponent (a : Multiset ℕ) :
   IsPrincipalSymmetric (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) := by
     by_cases h : ∃ p : MvPolynomial α F, p ≠ 0 ∧ stronglyHomogeneous p a
     exact psi_orderTypeComponent' h
@@ -328,18 +407,48 @@ section DisjointOrderTypes
 
 omit [DecidableEq α]
 
-def orderTypes (p : MvPolynomial α F) := (fun d => (orderType d).parts) '' {d : α →₀ ℕ | coeff d p ≠ 0}
+def orderTypes (p : MvPolynomial α F) := orderType '' {d : α →₀ ℕ | coeff d p ≠ 0}
 
-lemma mem_orderTypes {p : MvPolynomial α F} {d : α →₀ ℕ} : coeff d p ≠ 0 → (orderType d).parts ∈ orderTypes p := by
+lemma mem_orderTypes_iff_image_support {p : MvPolynomial α F} {a : Multiset ℕ} :
+  a ∈ orderTypes p ↔ a ∈ (Finset.image orderType p.support).toSet := by
+    simp only [orderTypes, ne_eq, Set.mem_image, Set.mem_setOf_eq, Finset.coe_image, Finset.mem_coe,
+      mem_support_iff]
+
+lemma orderTypes_eq_image_support {p : MvPolynomial α F} : orderTypes p = (Finset.image orderType p.support).toSet := by
+  ext a; exact mem_orderTypes_iff_image_support
+
+lemma mem_orderTypes {p : MvPolynomial α F} {d : α →₀ ℕ} : coeff d p ≠ 0 → orderType d ∈ orderTypes p := by
   simp only [ne_eq, orderTypes, Set.mem_image, Set.mem_setOf_eq]
   intro h; use d
 
+lemma orderTypes_singleton_iff_stronglyHomogeneous {p : MvPolynomial α F} {a : Multiset ℕ} (hpz : p ≠ 0) :
+  stronglyHomogeneous p a ↔ orderTypes p = {a} := by
+    constructor; intro h; unfold stronglyHomogeneous at h
+    refine Set.eq_singleton_iff_unique_mem.mpr ?_
+    constructor
+    rw [ne_zero_iff] at hpz
+    obtain ⟨d, hd⟩ := hpz
+    specialize h hd; rw [← h]
+    exact mem_orderTypes hd
+
+    intro b hb
+    simp [orderTypes] at hb
+    obtain ⟨e, he, heb⟩ := hb
+    apply h at he
+    rw [← he, ← heb]
+
+
+    intro h d hd
+    apply mem_orderTypes at hd
+    rw [h, Set.mem_singleton_iff] at hd
+    exact hd
+
 lemma orderTypes_disjoint_iff {p q : MvPolynomial α F} : Disjoint (orderTypes p) (orderTypes q) ↔ ∀ d e : α →₀ ℕ,
-  coeff d p ≠ 0 → coeff e q ≠ 0 → (orderType d).parts ≠ (orderType e).parts := by
+  coeff d p ≠ 0 → coeff e q ≠ 0 → orderType d ≠ orderType e := by
     constructor; intro h d e hd he
     contrapose! h
     refine Set.not_disjoint_iff.mpr ?_
-    use (orderType d).parts; constructor
+    use orderType d; constructor
     apply mem_orderTypes hd
     rw [h]; apply mem_orderTypes he
 
@@ -419,6 +528,33 @@ lemma orderTypes_add {p q : MvPolynomial α F} (h : Disjoint (orderTypes p) (ord
     contrapose! hsq
     rw [hsq, add_zero]; exact hdp
 
+lemma orderTypes_sum {X : Type*} {s : Finset X} {f : X → MvPolynomial α F}
+  (h : ∀ x y, x ∈ s → y ∈ s → x ≠ y → Disjoint (orderTypes (f x)) (orderTypes (f y))) :
+  orderTypes (∑ x ∈ s, f x) = ⋃ x ∈ s, orderTypes (f x) := by
+    apply antisymm orderTypes_sum_subset
+    intro a ha
+    rw [Set.mem_iUnion₂] at ha
+    obtain ⟨x, hxs, ha⟩ := ha
+
+    have haot : ∀ y ∈ s, x ≠ y → a ∉ orderTypes (f y) := by
+      intro y hys hxy
+      specialize h x y hxs hys hxy
+      exact Disjoint.notMem_of_mem_left h ha
+    simp [orderTypes]
+    simp [orderTypes] at ha
+    obtain ⟨d, hdf, hda⟩ := ha
+    use d; constructor; swap; exact hda
+    contrapose! haot
+    suffices ∃ y ∈ s, y ≠ x ∧ coeff d (f y) ≠ 0 by
+      obtain ⟨y, hy0, hy1, hy2⟩ := this
+      apply mem_orderTypes at hy2
+      rw [hda] at hy2; symm at hy1
+      use y
+    contrapose! haot
+    suffices coeff d (∑ x ∈ s, f x) = coeff d (f x) by rw [this]; exact hdf
+    rw [coeff_sum]
+    apply Finset.sum_eq_single_of_mem x hxs haot
+
 lemma orderTypes_subset_of_add_eq_add {p₁ p₂ q₁ q₂ : MvPolynomial α F} (hp : Disjoint (orderTypes p₁) (orderTypes p₂))
   (hpq₁ : Disjoint (orderTypes p₁) (orderTypes q₁)) (hpq₂ : Disjoint (orderTypes p₂) (orderTypes q₂))
   (h : p₁ + q₁ = p₂ + q₂) : orderTypes p₁ ⊆ orderTypes q₂ := by
@@ -468,7 +604,7 @@ lemma orderTypes_symm_subset {p : MvPolynomial α F} {σ : Perm α} : orderTypes
   obtain ⟨e, hed, he⟩ := hd
   use e; constructor; exact he
   rw [← hds, ← hed]; symm
-  exact symm_parts σ e
+  exact symm_orderType σ e
 
 lemma orderTypes_symm {p : MvPolynomial α F} {σ : Perm α} : orderTypes (σ • p) = orderTypes p := by
   apply antisymm orderTypes_symm_subset
@@ -487,7 +623,7 @@ lemma empty_orderTypes_iff_zero {p : MvPolynomial α F} : orderTypes p = ∅ ↔
   rw [ne_eq, eq_zero_iff.not] at h
   push_neg at h
   obtain ⟨d, h⟩ := h
-  use (orderType d).parts
+  use orderType d
   exact mem_orderTypes h
 
   intro h; rw [h]; exact orderTypes_zero

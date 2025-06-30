@@ -90,10 +90,10 @@ lemma eval_one_zero_invariant' {S : Set (MvPolynomial α F)} (h : ∀ p ∈ S, e
 
 variable [DecidableEq α]
 
-theorem strict_subset_orderType {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n} (hp : stronglyHomogeneous p a)
+theorem strict_subset_orderType {p : MvPolynomial α F} {a : Multiset ℕ} (hp : stronglyHomogeneous p a)
   (hpz : p ≠ 0) : eval_one p = 0 → symmSpan {p} < Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F)) := by
     intro h1; apply lt_of_le_of_ne
-    exact subset_homoOrderType hp
+    exact subset_orderTypeComponent hp
 
     rw [ne_zero_iff] at hpz
     obtain ⟨d, hdz⟩ := hpz
@@ -121,7 +121,7 @@ lemma minDeg_symmSpan {n : ℕ} {p : MvPolynomial α F} (h : p.IsHomogeneous n) 
   apply one_smul; exact hpz
   exact symmSet_homo_singleton h
 
-lemma minDeg_stronglyHomogeneous_symmSpan {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n}
+lemma minDeg_stronglyHomogeneous_symmSpan {p : MvPolynomial α F} {a : Multiset ℕ}
   (hp : stronglyHomogeneous p a) (hpz : p ≠ 0) : minDeg (symmSpan {p}) = minDeg (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) := by
     rw [minDeg_symmSpan (isHomogeneous_of_stronglyHomogeneous a hp) hpz, minDeg_orderTypeComponent]
     use p; constructor
@@ -129,7 +129,7 @@ lemma minDeg_stronglyHomogeneous_symmSpan {n : ℕ} {p : MvPolynomial α F} {a :
     exact hp; exact hpz
 
 
-lemma mgs_le_orderTypeComponent_rank [Finite α] {n : ℕ} {p : MvPolynomial α F} {a : Nat.Partition n}
+lemma mgs_le_orderTypeComponent_rank [Finite α] {p : MvPolynomial α F} {a : Multiset ℕ}
   (hp : stronglyHomogeneous p a) (hpz : p ≠ 0) : eval_one p = 0 →
   min_gen_size (symmSpan {p}) ≤ Module.finrank F (orderTypeComponent α F a) - 1 := by
     intro h1
@@ -238,7 +238,7 @@ lemma split_orderTypes {f p : MvPolynomial α F} {n : ℕ} (hf : f.IsHomogeneous
     let hfp := linear_comb_symm_of_symmSpan_homo hf hp h
     obtain ⟨c, hc⟩ := hfp
 
-    let S := {d : f.support | (orderType d.1).parts ∈ (orderTypes p)}
+    let S := {d : f.support | orderType d.1 ∈ orderTypes p}
     have hfpq : f = (∑ d ∈ S, monomial d (coeff d f)) + (f-(∑ d ∈ S, monomial d (coeff d f))) := by ring
     use (∑ d ∈ S, monomial d (coeff d f))
     use (f-(∑ d ∈ S, monomial d (coeff d f)))

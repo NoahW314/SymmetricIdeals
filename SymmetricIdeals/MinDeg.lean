@@ -145,9 +145,9 @@ lemma coeff_mul_single_homo [DecidableEq α] {S : Set (MvPolynomial α F)} {d : 
     suffices ((Submodule.span F S) : Set (MvPolynomial α F)) ⊆ ↑(Submodule.span (MvPolynomial α F) S) by apply this hp
     apply Submodule.span_subset_span
 
-lemma homoSubI_iSup {n : ℕ} {f : ℕ → Ideal (MvPolynomial α F)} (hh : ∀ i, (f i).IsHomogeneous (homogeneousSubmodule α F)) :
+lemma homoSubI_iSup {X : Type*} {n : ℕ} {f : X → Ideal (MvPolynomial α F)} (hh : ∀ i, (f i).IsHomogeneous (homogeneousSubmodule α F)) :
   homogeneousSubmoduleI n (⨆ i, f i) = ⨆ i, (homogeneousSubmoduleI n (f i)) := by
-    let g : ℕ → Submodule F (MvPolynomial α F) := fun i => (homogeneousSubmoduleI n (f i))
+    let g : X → Submodule F (MvPolynomial α F) := fun i => (homogeneousSubmoduleI n (f i))
     ext p; constructor; intro hp
     unfold homogeneousSubmoduleI at hp
     rw [Submodule.mem_inf] at hp
@@ -156,7 +156,7 @@ lemma homoSubI_iSup {n : ℕ} {f : ℕ → Ideal (MvPolynomial α F)} (hh : ∀ 
     intro N hN
     let hph := hp.1; let hps := hp.2
     rw [Submodule.restrictScalars_mem] at hps
-    let f' : ℕ → Submodule F (MvPolynomial α F) := fun i => Submodule.restrictScalars F (f i)
+    let f' : X → Submodule F (MvPolynomial α F) := fun i => Submodule.restrictScalars F (f i)
     have hps' : p ∈ ⨆ i, f' i := by
       rw [Submodule.mem_iSup_iff_exists_finsupp] at hps
       obtain ⟨a, haf, has⟩ := hps

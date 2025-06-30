@@ -91,6 +91,9 @@ def symmSpan (S : Set (MvPolynomial α F)) : Ideal (MvPolynomial α F) := Ideal.
 @[simp] lemma mem_symmSet_singleton {p q : MvPolynomial α F} : q ∈ symmSet {p} ↔ ∃ σ : Perm α, σ • p = q := by
   simp only [symmSet, Set.image_singleton, Set.iUnion_singleton_eq_range, Set.mem_range]
 
+@[simp] lemma mem_symmSet_singleton_of_perm {p : MvPolynomial α F} {σ : Perm α} : σ • p ∈ symmSet {p} := by
+  rw [mem_symmSet_singleton]; use σ
+
 @[simp] lemma mem_symmSet_singleton_self {p : MvPolynomial α F} : p ∈ symmSet {p} := by
   rw [mem_symmSet_singleton]
   use 1; apply one_smul
@@ -156,6 +159,27 @@ lemma symmSpan_symm {S : Set (MvPolynomial α F)} : IsSymmetricI (symmSpan S) :=
 lemma mem_symmSpan_self {p : MvPolynomial α F} : p ∈ symmSpan {p} := by
   apply Submodule.subset_span
   exact mem_symmSet_singleton_self
+
+lemma symmSpan_sum_le_sup_symmSpan {X : Type*} {S : Finset X} {g : S → MvPolynomial α F} :
+  symmSpan {∑ a, g a} ≤ ⨆ a, symmSpan {g a} := by
+    unfold symmSpan Ideal.span
+    rw [← Submodule.span_iUnion]
+    apply Submodule.span_le.mpr
+    intro p hp; rw [mem_symmSet_singleton] at hp;
+    obtain ⟨σ, hp⟩ := hp
+    rw [← hp, Finset.smul_sum]
+    apply sum_mem; intro a ha
+    apply Submodule.subset_span
+    rw [Set.mem_iUnion];
+    use a; exact mem_symmSet_singleton_of_perm
+
+lemma symmSpan_singleton_le_of_mem {p q : MvPolynomial α F} (h : q ∈ symmSpan {p}) :
+  symmSpan {q} ≤ symmSpan {p} := by
+    apply Ideal.span_le.mpr
+    intro r hr; rw [mem_symmSet_singleton] at hr
+    obtain ⟨σ, hr⟩ := hr; rw [← hr]
+    apply symmSpan_symm σ
+    exact h
 
 
 noncomputable def IsPrincipalSymmetric (I : Ideal (MvPolynomial α F)) := ∃ f : MvPolynomial α F,
