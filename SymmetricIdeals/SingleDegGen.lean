@@ -48,7 +48,25 @@ theorem singleDegGen_iff [DecidableEq α] : IsSingleDegGen I ↔ ∃ n : ℕ, �
   rw [hspan, hSz]
   exact zero_singleDegGen
 
---theorem singleDegGen_iff' : IsSingleDegGen I ↔ ∃ S : Set (MvPolynomial α F), S ⊆ (homogeneousSubmodule α F (minDeg I) ) ∧ I = Ideal.span S := by sorry
+
+theorem singleDegGen_iff' [DecidableEq α] : IsSingleDegGen I ↔ ∃ S : Set (MvPolynomial α F), S ⊆ (homogeneousSubmodule α F (minDeg I) ) ∧ I = Ideal.span S := by
+  constructor; intro h
+  rw [singleDegGen_iff] at h
+  obtain ⟨n, S, h⟩ := h; use S; constructor
+  swap; exact h.2
+
+  by_cases hS : ∃ p ∈ S, p ≠ 0
+  let hn := minDeg_homo hS h.1
+  rw [h.2, hn]; exact h.1
+
+  push_neg at hS
+  let hIB := Ideal.span_eq_bot.mpr hS
+  rw [← h.2] at hIB
+  rw [hIB, minDeg_bot]
+  intro p hp; apply hS p at hp; rw [hp]
+  simp only [SetLike.mem_coe, Submodule.zero_mem]
+
+  intro h; rw [singleDegGen_iff]; use minDeg I
 
 theorem singleDegGen_of_symmSpan [DecidableEq α] {p : MvPolynomial α F} {n : ℕ} (h : p.IsHomogeneous n) : IsSingleDegGen (symmSpan {p}) := by
   rw [singleDegGen_iff]; use n; use symmSet {p}
@@ -332,3 +350,29 @@ lemma psi_homo_gen_of_singleDegGen (hI : IsSingleDegGen I) (h : IsPrincipalSymme
         simp only [Set.mem_image, mem_symmSet_singleton, exists_exists_eq_and, homoComp_symmAct]
 
     apply homoSubI_monotone (minDeg I) hssI
+
+
+omit [DecidableEq α] in
+lemma homoSpan_mul {I J : Ideal (MvPolynomial α F)} {n m : ℕ} {S T : Set (MvPolynomial α F)}
+  (hI : S ⊆ (homogeneousSubmodule α F n) ∧ I = Ideal.span S) (hJ : T ⊆ (homogeneousSubmodule α F m) ∧ J = Ideal.span T) :
+  Set.mul.mul S T ⊆ (homogeneousSubmodule α F (n+m)) ∧ I*J = Ideal.span (Set.mul.mul S T) := by
+    constructor
+    intro r hr
+    apply Set.mem_mul.mp at hr
+    obtain ⟨p, hp, q, hq, hr⟩ := hr
+    apply hI.1 at hp; apply hJ.1 at hq
+    rw [SetLike.mem_coe, mem_homogeneousSubmodule] at hp
+    rw [SetLike.mem_coe, mem_homogeneousSubmodule] at hq
+    rw [← hr, SetLike.mem_coe, mem_homogeneousSubmodule]
+    exact IsHomogeneous.mul hp hq
+
+    rw [hI.2, hJ.2]
+    apply Ideal.span_mul_span'
+
+lemma singleDegGen_mul {I J : Ideal (MvPolynomial α F)} (hI : IsSingleDegGen I)
+  (hJ : IsSingleDegGen J) : IsSingleDegGen (I*J) := by
+  rw [singleDegGen_iff] at hI; rw [singleDegGen_iff] at hJ
+  obtain ⟨n, S, hI⟩ := hI; obtain ⟨m, T, hJ⟩ := hJ
+  rw [singleDegGen_iff]
+  use n+m; use Set.mul.mul S T
+  exact homoSpan_mul hI hJ

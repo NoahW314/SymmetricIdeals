@@ -22,7 +22,7 @@ lemma mgs_pos [hnr : IsNoetherianRing R] (h : I ≠ ⊥) : min_gen_size I > 0 :=
   unfold min_gen_size
   apply Nat.sInf_eq_zero.not.mpr
   simp only [Set.mem_setOf_eq, Finset.card_eq_zero, existsAndEq, Finset.notMem_empty,
-    not_false_eq_true, Finset.coe_empty, Ideal.span_empty, true_and, not_or, ne_eq]
+    not_false_eq_true, Finset.coe_empty, Ideal.span_empty, true_and, not_or]
   constructor; exact h
   obtain ⟨S, hspan⟩ := ((isNoetherianRing_iff_ideal_fg R).mp hnr) I
   symm at hspan

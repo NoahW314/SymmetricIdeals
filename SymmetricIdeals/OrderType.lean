@@ -443,6 +443,11 @@ lemma orderTypes_singleton_iff_stronglyHomogeneous {p : MvPolynomial α F} {a : 
     rw [h, Set.mem_singleton_iff] at hd
     exact hd
 
+lemma orderTypes_monomial {d : α →₀ ℕ} : orderTypes (monomial d (1 : F)) = {orderType d} := by
+  apply (orderTypes_singleton_iff_stronglyHomogeneous _).mp
+  rw [stronglyHomogeneous_monomial_iff (one_ne_zero)]
+  apply monomial_eq_zero.not.mpr one_ne_zero
+
 lemma orderTypes_disjoint_iff {p q : MvPolynomial α F} : Disjoint (orderTypes p) (orderTypes q) ↔ ∀ d e : α →₀ ℕ,
   coeff d p ≠ 0 → coeff e q ≠ 0 → orderType d ≠ orderType e := by
     constructor; intro h d e hd he

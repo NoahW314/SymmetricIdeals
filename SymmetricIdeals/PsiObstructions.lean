@@ -22,11 +22,11 @@ lemma psi_mgs_factorial [Finite α] {I : Ideal (MvPolynomial α F)} : IsPrincipa
     let F : MvPolynomial α F → Equiv.Perm α := fun g => if hg : ∃ σ : Equiv.Perm α, g = σ • f then Classical.choose hg else 1
     have hsi : Set.InjOn F S' := by
       intro g hg g' hg' hgg
-      simp only [S', Set.mem_setOf, symmSet, Set.mem_iUnion, Set.image_singleton,
+      simp only [S', symmSet, Set.mem_iUnion, Set.image_singleton,
         Set.mem_singleton_iff] at hg
-      simp only [S', Set.mem_setOf, symmSet, Set.mem_iUnion, Set.image_singleton,
+      simp only [S', symmSet, Set.mem_iUnion, Set.image_singleton,
         Set.mem_singleton_iff] at hg'
-      simp only [hg, ↓reduceDIte, hg', F, S'] at hgg
+      simp only [hg, ↓reduceDIte, hg', F] at hgg
       let hgc := Classical.choose_spec hg
       let hgc' := Classical.choose_spec hg'
       rw [hgc, hgc', hgg]
@@ -271,7 +271,7 @@ lemma split_orderTypes {f p : MvPolynomial α F} {n : ℕ} (hf : f.IsHomogeneous
       push_neg at he; rw [← mem_support_iff] at he
 
       rw [Finset.sum_eq_single ⟨e, he⟩]
-      simp only [↓reduceIte, ne_eq]
+      simp only [↓reduceIte]
       exact mem_support_iff.mp he
 
       intro x hxS hxe
@@ -279,7 +279,7 @@ lemma split_orderTypes {f p : MvPolynomial α F} {n : ℕ} (hf : f.IsHomogeneous
       intro hxe2
       rw [Subtype.coe_eq_iff] at hxe2
       obtain ⟨hef2, hxe2⟩ := hxe2
-      simp only [hxe2, ne_eq, not_true_eq_false, S] at hxe
+      simp only [hxe2, ne_eq, not_true_eq_false] at hxe
 
       intro heS
       simp only [Set.toFinset_setOf, Finset.univ_eq_attach, Finset.mem_filter, Finset.mem_attach,

@@ -127,7 +127,7 @@ theorem stronglyHomogeneous_of_homogeneous {p : MvPolynomial α F}
         Finset.mem_filter, mem_support_iff, ne_eq]
       rw [Finset.sum_ite]
       simp only [Finset.mem_filter, mem_support_iff, ne_eq, Finset.sum_const,
-        nsmul_eq_mul, not_and, Finset.sum_const_zero, mul_zero, add_zero]
+        nsmul_eq_mul, not_and, mul_zero, add_zero]
       by_cases hdpz : coeff d p = 0
       rw [hdpz, mul_zero]
 

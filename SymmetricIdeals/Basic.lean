@@ -160,6 +160,12 @@ lemma mem_symmSpan_self {p : MvPolynomial α F} : p ∈ symmSpan {p} := by
   apply Submodule.subset_span
   exact mem_symmSet_singleton_self
 
+lemma mem_symmSpan_monomial {d : α →₀ ℕ} (σ : Perm α) :
+  monomial (Finsupp.mapDomain σ d) (1 : F) ∈ symmSpan {(monomial d (1 : F))} := by
+    apply Submodule.subset_span
+    rw [mem_symmSet_singleton]; use σ
+    rw [symm_monomial]
+
 lemma symmSpan_sum_le_sup_symmSpan {X : Type*} {S : Finset X} {g : S → MvPolynomial α F} :
   symmSpan {∑ a, g a} ≤ ⨆ a, symmSpan {g a} := by
     unfold symmSpan Ideal.span
@@ -191,7 +197,7 @@ lemma psi_is_symm {I : Ideal (MvPolynomial α F)} : IsPrincipalSymmetric I → I
   rw [h]
   exact symmSpan_symm
 
-lemma top_is_psi : IsPrincipalSymmetric (⊤ : Ideal (MvPolynomial α F)) := by
+@[simp] lemma top_is_psi : IsPrincipalSymmetric (⊤ : Ideal (MvPolynomial α F)) := by
   use 1; symm; exact symmSpan_one
-lemma bot_is_psi : IsPrincipalSymmetric (⊥ : Ideal (MvPolynomial α F)) := by
+@[simp] lemma bot_is_psi : IsPrincipalSymmetric (⊥ : Ideal (MvPolynomial α F)) := by
   use 0; symm; exact symmSpan_zero
