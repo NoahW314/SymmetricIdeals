@@ -41,6 +41,11 @@ lemma perm_eq_c_perm_of_kSymm {p : MvPolynomial α F} (h : kSymmetric p) : ∀ �
     rw [hc₂, hc₁, smul_eq_C_mul, smul_eq_C_mul, smul_eq_C_mul]
     rw [← mul_assoc, ← C_mul, mul_assoc, inv_mul_cancel₀ hc₂z, mul_one]
 
+lemma symmSpan_not_bot_of_not_kSymmetric {p : MvPolynomial α F} (h : ¬ kSymmetric p) :
+  symmSpan {p} ≠ ⊥ := by
+    contrapose! h
+    rw [symmSpan_bot_iff] at h
+    rw [h]; exact kSymmetric_zero
 
 theorem productPsi_of_kSymmetric {p q : MvPolynomial α F} (h : kSymmetric p) :
   (symmSpan {p})*(symmSpan {q}) = symmSpan {p*q} := by

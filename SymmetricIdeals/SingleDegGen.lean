@@ -290,6 +290,52 @@ theorem homoComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α F)} {S : Se
     intro i h₁ h₂
     simp [smul_eq_mul, c, e]
 
+theorem singleDegGen_iff_fin_homo_span [Finite α] : IsSingleDegGen I ↔
+  ∃ S : Finset (MvPolynomial α F), S.toSet ⊆ (homogeneousSubmodule α F (minDeg I)) ∧ I = Ideal.span S := by
+    constructor; intro h
+    obtain ⟨T, hI⟩ := ((isNoetherianRing_iff_ideal_fg (MvPolynomial α F)).mp isNoetherianRing) I
+    use Finset.image (homogeneousComponent (minDeg I)) T
+    have h₂ : (Finset.image (homogeneousComponent (minDeg I)) T).toSet ⊆ homogeneousSubmodule α F (minDeg I) := by
+      intro p;
+      simp only [Finset.coe_image, Set.mem_image, Finset.mem_coe, SetLike.mem_coe,
+        mem_homogeneousSubmodule, forall_exists_index, and_imp]
+      intro q hq hqp; rw [← hqp]
+      exact homogeneousComponent_isHomogeneous (minDeg I) q
+    constructor
+    exact h₂
+
+
+    nth_rw 1 [h]
+    apply Submodule.span_eq_span
+    intro p hp
+    symm at hI
+    apply homoComps_gen_singleDegGen_ideal h hI at hp
+    rw [homogeneousSubmoduleI, Submodule.mem_inf, Submodule.restrictScalars_mem] at hp
+    simp only [Finset.coe_image, SetLike.mem_coe]
+    exact hp.2
+
+    apply subset_trans ?_ Submodule.subset_span
+    intro p hp
+    rw [homogeneousSubmoduleI]
+    simp only [Submodule.inf_coe, Submodule.coe_restrictScalars, Set.mem_inter_iff, SetLike.mem_coe]
+    constructor; apply h₂ at hp; exact hp
+    simp only [Finset.coe_image, Set.mem_image, Finset.mem_coe] at hp
+    obtain ⟨q, hq, hp⟩ := hp
+    rw [← hp]
+    suffices q ∈ I by
+      apply single_deg_gen_homo at h
+      specialize h (minDeg I) this
+      have h' : (DirectSum.decompose (homogeneousSubmodule α F)) q = DirectSum.Decomposition.decompose' q := by rfl
+      rw [h'] at h
+      rw [decomposition.decompose'_apply] at h
+      exact h
+    rw [← hI]
+    apply Ideal.subset_span; exact hq
+
+
+    intro h; rw [singleDegGen_iff']
+    obtain ⟨S, hS⟩ := h; use S.toSet
+
 lemma psi_homo_gen_of_singleDegGen (hI : IsSingleDegGen I) (h : IsPrincipalSymmetric I) :
   ∃ f, f.IsHomogeneous (minDeg I) ∧ I = symmSpan {f} := by
     obtain ⟨f, h⟩ := h

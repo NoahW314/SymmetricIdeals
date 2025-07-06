@@ -156,9 +156,15 @@ lemma symmSpan_symm {S : Set (MvPolynomial α F)} : IsSymmetricI (symmSpan S) :=
   rw [symmSpan, symmSet_one, Ideal.span_singleton_eq_top]
   exact isUnit_one
 
+
 lemma mem_symmSpan_self {p : MvPolynomial α F} : p ∈ symmSpan {p} := by
   apply Submodule.subset_span
   exact mem_symmSet_singleton_self
+
+lemma symmSpan_bot_iff {p : MvPolynomial α F} : symmSpan {p} = ⊥ ↔ p = 0 := by
+  constructor; intro h; rw [Submodule.eq_bot_iff] at h
+  specialize h p mem_symmSpan_self; exact h
+  intro h; rw [h]; exact symmSpan_zero
 
 lemma mem_symmSpan_monomial {d : α →₀ ℕ} (σ : Perm α) :
   monomial (Finsupp.mapDomain σ d) (1 : F) ∈ symmSpan {(monomial d (1 : F))} := by

@@ -55,15 +55,17 @@ lemma stronglyHomogeneous_empty_iff [DecidableEq α] {p : MvPolynomial α F} : s
 lemma orderType_sum_eq_degree {d : α →₀ ℕ} : (orderType d).sum = d.degree := by
   simp only [orderType, Finset.sum_map_val, Finsupp.degree]
 
+lemma degree_eq_finsupp_weight_one {d : α →₀ ℕ} : (Finsupp.weight 1) d = d.degree := by
+  simp only [Finsupp.weight, Finsupp.linearCombination, Pi.one_apply,
+        LinearMap.toAddMonoidHom_coe, Finsupp.coe_lsum, LinearMap.coe_smulRight, LinearMap.id_coe,
+        id_eq, smul_eq_mul, mul_one, Finsupp.degree]
+  rfl
+
 lemma isHomogeneous_of_stronglyHomogeneous {p : MvPolynomial α F} (a : Multiset ℕ) :
   stronglyHomogeneous p a → p.IsHomogeneous (Multiset.sum a) := by
     intro h d hd
     specialize h hd
-    have hdd : (Finsupp.weight 1) d = d.degree := by
-      simp only [Finsupp.weight, Finsupp.linearCombination, Pi.one_apply,
-        LinearMap.toAddMonoidHom_coe, Finsupp.coe_lsum, LinearMap.coe_smulRight, LinearMap.id_coe,
-        id_eq, smul_eq_mul, mul_one, Finsupp.degree]
-      rfl
+    have hdd : (Finsupp.weight 1) d = d.degree := by exact degree_eq_finsupp_weight_one
     rw [← h, orderType_sum_eq_degree, hdd]
 
 lemma sum_stronglyHomogeneous (a : Multiset ℕ) {p q : MvPolynomial α F} :
