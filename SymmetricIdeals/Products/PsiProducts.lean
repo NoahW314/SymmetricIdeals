@@ -297,7 +297,7 @@ theorem power_psi_two_vars {I : Ideal (MvPolynomial (Fin 2) F)} (hI : IsSingleDe
       rw [product_psi_two_vars hI hI hIp hIp hIB hIB, or_self] at h
       exact h
     tfae_have 3 -> 1 := by
-      intro h; intro n
+      intro h n
       induction' n with n ih
       simp only [pow_zero, Ideal.one_eq_top, top_is_psi]
       rw [pow_succ, product_psi_two_vars]

@@ -8,7 +8,7 @@ variable {I : Ideal (MvPolynomial α F)}
 attribute [local instance] MvPolynomial.gradedAlgebra
 
 
-
+noncomputable
 def homogeneousSubmoduleI (n : ℕ) (I : Ideal (MvPolynomial α F)) : Submodule F (MvPolynomial α F) :=
   (homogeneousSubmodule α F n) ⊓ (Submodule.restrictScalars F I)
 
@@ -18,9 +18,12 @@ lemma homoSubI_monotone (n : ℕ) {I J : Ideal (MvPolynomial α F)} : I ≤ J
     apply inf_le_inf_left
     exact hij
 
-@[simp] lemma homoSubI_zero {n : ℕ} : homogeneousSubmoduleI n (0 : Ideal (MvPolynomial α F)) = 0 := by
-  simp only [homogeneousSubmoduleI, Submodule.zero_eq_bot, Submodule.restrictScalars_bot, bot_le,
-    inf_of_le_right]
+@[simp] lemma homoSubI_zero {n : ℕ} :
+    homogeneousSubmoduleI n (0 : Ideal (MvPolynomial α F)) = 0 := by
+  rw [homogeneousSubmoduleI, Submodule.zero_eq_bot, Submodule.zero_eq_bot,
+    (Submodule.restrictScalars_eq_bot_iff _ _ _).mpr, inf_of_le_right]
+  exact bot_le
+  rfl
 
 lemma eq_of_homo_homoComp {n : ℕ} (p q : MvPolynomial α F) (hqz : q ≠ 0) (hp : p.IsHomogeneous n) (hq : q.IsHomogeneous n)
   (h : (homogeneousComponent n) p = (homogeneousComponent n) q) : p = q := by
@@ -30,8 +33,7 @@ lemma eq_of_homo_homoComp {n : ℕ} (p q : MvPolynomial α F) (hqz : q ≠ 0) (h
       rw [IsHomogeneous.totalDegree hp, IsHomogeneous.totalDegree hq hqz]
       apply_fun (homogeneousComponent n)
       rw [← mem_homogeneousSubmodule] at hq
-      rw [map_zero, h, homogeneousComponent_of_mem hq]
-      simp only [↓reduceIte]; exact hqz
+      simp [LinearMap.map_zero, h, homogeneousComponent_of_mem hq, hqz]
     ext i : 1
     by_cases hin : i = n
     rw [hin]; exact h
@@ -60,7 +62,7 @@ lemma coeff_mul_single_homo [DecidableEq α] {S : Set (MvPolynomial α F)} {d : 
     push_neg at hb2
     let hab2 := hab
     apply_fun Finsupp.degree at hab2
-    rw [Finsupp.degree_add, hb2, hd, Nat.add_eq_right, Finsupp.degree_eq_zero_iff] at hab2
+    rw [map_add, hb2, hd, Nat.add_eq_right, Finsupp.degree_eq_zero_iff] at hab2
     rw [hab2, zero_add] at hab
     have hb : b = (0, d) := by exact Prod.ext hab2 hab
     have hfalse : False := by exact hbd hb
@@ -75,7 +77,7 @@ lemma coeff_mul_single_homo [DecidableEq α] {S : Set (MvPolynomial α F)} {d : 
     apply Submodule.mem_span_set'.mpr
     obtain ⟨hpm, hp⟩ := Submodule.mem_inf.mp hp
     rw [mem_homogeneousSubmodule] at hpm
-    rw [Submodule.restrictScalars_mem] at hp
+    apply (Submodule.restrictScalars_mem F (Ideal.span S) p).mp at hp
     apply Submodule.mem_span_set'.mp at hp
     obtain ⟨k, f, g, hp⟩ := hp; use k
     let f' : Fin k → F := fun i => coeff 0 (f i)
@@ -368,7 +370,7 @@ minDeg (Ideal.span S) = n := by
   rw [← hd.1]
   apply ne_of_gt
   apply lt_of_lt_of_le hnm
-  rw [Finsupp.degree_add]
+  rw [map_add]
   suffices x₂.degree = n by
     rw [this]
     exact Nat.le_add_left n x₁.degree

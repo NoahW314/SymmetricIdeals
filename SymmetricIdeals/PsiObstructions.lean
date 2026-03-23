@@ -41,7 +41,7 @@ lemma psi_mgs_factorial [Finite α] {I : Ideal (MvPolynomial α F)} : IsPrincipa
       unfold n
       rw [← Nat.card_perm, ← Nat.card_eq_card_toFinset S']
       apply Set.InjOn.injective at hsi
-      apply Finite.card_le_of_injective (S'.restrict F) hsi
+      apply Nat.card_le_card_of_injective (S'.restrict F) hsi
     apply le_trans ?_ han
     apply Nat.sInf_le
     rw [Set.mem_setOf]

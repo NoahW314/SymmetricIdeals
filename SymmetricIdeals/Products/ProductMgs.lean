@@ -229,7 +229,7 @@ lemma pmul_inf {p : MvPolynomial α F} {M N : Submodule R (MvPolynomial α F)} :
     simp only [hp0, pmul_zero, Submodule.zero_eq_bot, le_refl, inf_of_le_left]
 
     ext q
-    simp only [← SetLike.mem_coe, pmul_eq, Submodule.inf_coe, Set.mem_image, Set.mem_inter_iff]
+    simp only [← SetLike.mem_coe, pmul_eq, Submodule.coe_inf, Set.mem_image, Set.mem_inter_iff]
     constructor; intro h
     obtain ⟨x, h⟩ := h; constructor
     use x; constructor; exact h.1.1; exact h.2
@@ -378,8 +378,7 @@ lemma highestDegree_eq_totalDegree {p : MvPolynomial α F} : highestDegree p = p
   rw [Set.mem_setOf]
   contrapose! hd; apply_fun (coeff d) at hd
   rw [coeff_homogeneousComponent] at hd
-  simp only [Finsupp.degree, ↓reduceIte, coeff_zero] at hd
-  exact hd
+  simpa [Finsupp.degree, ↓reduceIte, coeff_zero] using hd
 
 theorem highestDegree_mul {p q : MvPolynomial α F} (hp : p ≠ 0) (hq : q ≠ 0) : highestDegree (p*q) = highestDegree p + highestDegree q := by
   simp only [highestDegree_eq_totalDegree]
@@ -401,7 +400,7 @@ lemma homogeneousComponent_mul {p q : MvPolynomial α F} {n : ℕ} :
     rw [Finset.sum_eq_single_of_mem (x.1.degree, x.2.degree)]
     simp only [↓reduceIte]
     rw [Finset.mem_antidiagonal]
-    simp only; rw [← hd, ← hx, Finsupp.degree_add]
+    simp only; rw [← hd, ← hx, map_add]
 
     intro y hy hyx
     simp only [ite_eq_right_iff, mul_eq_zero]
@@ -418,7 +417,7 @@ lemma homogeneousComponent_mul {p q : MvPolynomial α F} {n : ℕ} :
     simp only [mul_ite, ite_mul, zero_mul, mul_zero, ite_eq_right_iff, mul_eq_zero]
     intro hxy2 hxy1
     rw [Finset.mem_antidiagonal] at hy; rw [Finset.mem_antidiagonal] at hx
-    apply_fun Finsupp.degree at hy; rw [Finsupp.degree_add] at hy
+    apply_fun Finsupp.degree at hy; rw [map_add] at hy
     rw [← hy, ← hx, hxy1, hxy2] at hd
     simp only [not_true_eq_false] at hd
 
@@ -748,7 +747,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α F} {n : ℕ} {J : Ideal (MvPoly
     obtain ⟨T, hT, hTJ⟩ := singleDegGen_iff_fin_homo_span.mp hJ
     have hdemp : DecidableEq (MvPolynomial α F) := by exact Classical.typeDecidableEq (MvPolynomial α F)
     let S := Finset.erase T 0
-    have hS : S.toSet ⊆ (homogeneousSubmodule α F (minDeg J)) := by
+    have hS : SetLike.coe S ⊆ (homogeneousSubmodule α F (minDeg J)) := by
       apply subset_trans ?_ hT
       apply Finset.erase_subset
     have hSJ : J = Ideal.span S := by
@@ -809,7 +808,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α F} {n : ℕ} {J : Ideal (MvPoly
     rw [hJJ', hJJ'r]
     obtain ⟨T'', hT'', hJT''⟩ := singleDegGen_iff_fin_homo_span.mp hJ's
     let S'' := Finset.erase T'' 0
-    have hS'' : S''.toSet ⊆ (homogeneousSubmodule α F (minDeg J')) := by
+    have hS'' : SetLike.coe S'' ⊆ (homogeneousSubmodule α F (minDeg J')) := by
       apply subset_trans ?_ hT''
       apply Finset.erase_subset
     have hJS'' : J' = Ideal.span S'' := by

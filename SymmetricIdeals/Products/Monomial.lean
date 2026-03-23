@@ -27,7 +27,7 @@ lemma top_of_ne_bot_of_isEmpty {I : Ideal (MvPolynomial α F)} [IsEmpty α] (h :
 
 lemma bddAbove_finsupp_range {d : α →₀ ℕ} : BddAbove (Set.range d) := by
   refine Set.Finite.bddAbove ?_
-  suffices Set.range d ≤ (Multiset.map d d.support.val).toFinset.toSet ∪ {0} by
+  suffices Set.range d ≤ SetLike.coe (Multiset.map d d.support.val).toFinset ∪ {0} by
     apply Set.Finite.subset ?_ this
     simp only [Set.union_singleton, Finset.finite_toSet, Set.Finite.insert]
   intro n h
@@ -201,13 +201,13 @@ theorem monomialProduct_Psi {I J : Ideal (MvPolynomial α F)} (hIm : ∃ S : Set
     let c := Finsupp.mapDomain σ b
 
     have hmdp : minDeg (I*J) = (a+c).degree := by
-      rw [minDeg_mul_eq_add_minDeg hIs hJs hIB hJB, Finsupp.degree_add, haI, hbJ]
+      rw [minDeg_mul_eq_add_minDeg hIs hJs hIB hJB, map_add, haI, hbJ]
       rw [minDeg_symmSpan (monomial_homogeneous), minDeg_symmSpan (monomial_homogeneous)]
       rw [← degree_perm σ]
       rw [ne_eq, monomial_eq_zero.not]; exact one_ne_zero
       rw [ne_eq, monomial_eq_zero.not]; exact one_ne_zero
     have hmdp2 : minDeg (I*J) = (a+Finsupp.mapDomain (Equiv.swap x i) c).degree := by
-      rw [hmdp, Finsupp.degree_add, Finsupp.degree_add, Nat.add_left_cancel_iff]
+      rw [hmdp, map_add, map_add, Nat.add_left_cancel_iff]
       exact degree_perm (Equiv.swap x i)
 
     apply not_psi_of_nonzero_disjoint_orderTypes (singleDegGen_mul hIs hJs) ?_ ?_

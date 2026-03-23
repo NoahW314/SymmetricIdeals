@@ -26,15 +26,14 @@ lemma mgs_pos [hnr : IsNoetherianRing R] (h : I ≠ ⊥) : min_gen_size I > 0 :=
   constructor; exact h
   obtain ⟨S, hspan⟩ := ((isNoetherianRing_iff_ideal_fg R).mp hnr) I
   symm at hspan
-  let S' := S.toSet \ {0}
+  let S' := SetLike.coe S \ {0}
   have hsf : Fintype S' := by exact Fintype.ofFinite ↑S'
   let S'' := S'.toFinset
   push_neg; use (S''.card); rw [Set.mem_setOf]
   use S''; constructor; simp only [Set.mem_toFinset, Set.mem_diff, Finset.mem_coe,
     Set.mem_singleton_iff, not_true_eq_false, and_false, not_false_eq_true, S'', S']
   constructor; rfl
-  simp [S'', S']; rw [hspan]; symm
-  apply Submodule.span_sdiff_singleton_zero
+  simp [S'', S']; rw [hspan]
 
 @[simp] lemma mgs_top [Nontrivial R] : min_gen_size (⊤ : Ideal R) = 1 := by
   have h1 : 1 ∈ {n : ℕ | ∃ S : Finset R, 0 ∉ S ∧ S.card  = n ∧ (⊤ : Ideal R) = Ideal.span ↑S} := by

@@ -167,9 +167,7 @@ theorem stronglyHomogeneous_of_homogeneous {p : MvPolynomial α F}
       rw [← hd.2, orderType_sum_eq_degree]
       rw [mem_support_iff] at hd
       rw [← hp hd.1]
-      simp only [Finsupp.weight, Finsupp.linearCombination, Pi.one_apply,
-        LinearMap.toAddMonoidHom_coe, Finsupp.coe_lsum, Finsupp.sum, LinearMap.coe_smulRight,
-        LinearMap.id_coe, id_eq, smul_eq_mul, mul_one, Finsupp.degree]
+      simp [Finsupp.weight, Finsupp.linearCombination, Finsupp.degree, Finsupp.sum]
     have hgh : ∀ a, (g a).IsHomogeneous (minDeg (symmSpan {p})) := by
       intro a
       rw [hmdp a]
@@ -234,7 +232,7 @@ theorem stronglyHomogeneous_of_homogeneous {p : MvPolynomial α F}
       rw [Finset.card_eq_one] at h1; unfold S at h1
       obtain ⟨a, h1⟩ := h1; use a
       rw [orderTypes_singleton_iff_stronglyHomogeneous hpz]
-      apply_fun (fun x => x.toSet) at h1
+      apply_fun SetLike.coe at h1
       simp only [Finset.coe_image, Finset.coe_singleton] at h1
       rw [← h1, orderTypes];
       suffices {d | coeff d p ≠ 0} = p.support by rw [this]

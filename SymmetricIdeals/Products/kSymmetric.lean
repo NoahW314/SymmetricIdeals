@@ -1,8 +1,7 @@
 import Mathlib
 import SymmetricIdeals.Basic
 
-variable {α F : Type*} [Field F]
-variable {I : Ideal (MvPolynomial α F)}
+variable {α F : Type*} [Field F] {I : Ideal (MvPolynomial α F)}
 
 open MvPolynomial
 
@@ -47,6 +46,7 @@ lemma symmSpan_not_bot_of_not_kSymmetric {p : MvPolynomial α F} (h : ¬ kSymmet
     rw [symmSpan_bot_iff] at h
     rw [h]; exact kSymmetric_zero
 
+
 theorem productPsi_of_kSymmetric {p q : MvPolynomial α F} (h : kSymmetric p) :
   (symmSpan {p})*(symmSpan {q}) = symmSpan {p*q} := by
     unfold symmSpan
@@ -54,11 +54,13 @@ theorem productPsi_of_kSymmetric {p q : MvPolynomial α F} (h : kSymmetric p) :
     apply Submodule.span_eq_span
 
     intro f hf
-    simp only [mem_symmSet_singleton, Set.iUnion_exists, Set.iUnion_iUnion_eq',
-      Set.iUnion_singleton_eq_range, Set.mem_iUnion, Set.mem_range] at hf
+    simp [HMul.hMul, Mul.mul] at hf
     obtain ⟨σ, τ, hf⟩ := hf
+    have hf : f = (σ • p) * (τ • q) := by
+      rw [← hf]
+      rfl
     obtain ⟨c, hc⟩ := perm_eq_c_perm_of_kSymm h σ τ
-    rw [← hf, hc]
+    rw [hf, hc]
     simp only [Ideal.submodule_span_eq, Algebra.smul_mul_assoc, SetLike.mem_coe]
     rw [← smul_mul', smul_eq_C_mul]
     apply Ideal.mul_mem_left (Ideal.span (symmSet {p * q})) (C c)
@@ -71,8 +73,7 @@ theorem productPsi_of_kSymmetric {p q : MvPolynomial α F} (h : kSymmetric p) :
     obtain ⟨σ, hf⟩ := hf
     rw [smul_mul'] at hf; rw [← hf]
     apply Submodule.subset_span
-    simp only [mem_symmSet_singleton, Set.iUnion_exists, Set.iUnion_iUnion_eq',
-      Set.iUnion_singleton_eq_range, Set.mem_iUnion, Set.mem_range, exists_apply_eq_apply2]
+    simp [HMul.hMul, Mul.mul]
 
 lemma powerPsi_of_kSymmetric {p : MvPolynomial α F} (h : kSymmetric p) (n : ℕ) :
   (symmSpan {p})^n = symmSpan {p^n} := by

@@ -89,8 +89,8 @@ theorem mgs_ge_rank (h : IsSingleDegGen I) : min_gen_size I ≥ Module.finrank F
   rw [Set.mem_setOf] at hmgs
   obtain ⟨S, hsz, hcard, hspan⟩ := hmgs
   rw [← hcard, ge_iff_le]
-  have hfin : Fintype ((homogeneousComponent (minDeg I)) '' S.toSet) := by apply Fintype.ofFinite
-  let S' := ((homogeneousComponent (minDeg I)) '' S.toSet).toFinset
+  have hfin : Fintype ((homogeneousComponent (minDeg I)) '' SetLike.coe S) := by apply Fintype.ofFinite
+  let S' := ((homogeneousComponent (minDeg I)) '' SetLike.coe S).toFinset
   have hhcS : ∀ p : S', ∃ q : S, (homogeneousComponent (minDeg I)) q = p.1 := by
       intro p; let hp := p.2
       unfold S' at hp
@@ -105,10 +105,10 @@ theorem mgs_ge_rank (h : IsSingleDegGen I) : min_gen_size I ≥ Module.finrank F
     apply Subtype.coe_inj.mp
     rw [← Classical.choose_spec (hhcS p), ← Classical.choose_spec (hhcS q), hf]
   apply le_trans ?_ hSS
-  have hscoe : S'.card = (S'.toSet).toFinset.card := by rw [Finset.toFinset_coe S']
+  have hscoe : S'.card = (SetLike.coe S').toFinset.card := by rw [Finset.toFinset_coe S']
   rw [hscoe]
-  suffices Module.finrank F (homogeneousSubmoduleI (minDeg I) I) ≤ Module.finrank F (Submodule.span F S'.toSet) by
-    apply le_trans this (finrank_span_le_card (S'.toSet))
+  suffices Module.finrank F (homogeneousSubmoduleI (minDeg I) I) ≤ Module.finrank F (Submodule.span F (SetLike.coe S')) by
+    apply le_trans this (finrank_span_le_card (SetLike.coe S'))
   apply Submodule.finrank_mono
 
 

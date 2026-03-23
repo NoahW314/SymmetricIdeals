@@ -46,11 +46,8 @@ lemma homo_symmAct (σ : Perm α) {p : MvPolynomial α F} {n : ℕ} (h : p.IsHom
     rw [coeff_rename_mapDomain σ (Equiv.injective σ), coeff_homogeneousComponent]
     have hed : e.degree = d.degree := by
       rw [← he]
-      simp only [Finsupp.degree, Finsupp.mapDomain_equiv_apply]
-      apply Finset.sum_bijective σ (Equiv.bijective σ)
-      simp only [Finsupp.mem_support_iff, ne_eq, Finsupp.mapDomain_equiv_apply,
-        Equiv.symm_apply_apply, implies_true]
-      simp only [Finsupp.mem_support_iff, ne_eq, Equiv.symm_apply_apply, implies_true]
+      simp [Finsupp.degree]
+      apply Finset.sum_bijective σ (Equiv.bijective σ) <;> simp
     by_cases hd : d.degree = n
     rw [hd] at hed
     simp only [hed, ↓reduceIte, hd]
@@ -86,6 +83,7 @@ lemma is_symm_iff_stable_image {I : Ideal (MvPolynomial α F)} : IsSymmetricI I 
     apply Ideal.mem_map_of_mem; exact hi
 
 def symmSet (S : Set (MvPolynomial α F)) : Set (MvPolynomial α F) := ⋃ σ : Perm α, ((σ • .) '' S)
+noncomputable
 def symmSpan (S : Set (MvPolynomial α F)) : Ideal (MvPolynomial α F) := Ideal.span (symmSet S)
 
 @[simp] lemma mem_symmSet_singleton {p q : MvPolynomial α F} : q ∈ symmSet {p} ↔ ∃ σ : Perm α, σ • p = q := by
