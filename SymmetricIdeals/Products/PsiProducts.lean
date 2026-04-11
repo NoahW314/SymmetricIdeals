@@ -194,7 +194,7 @@ theorem power_psi {I : Ideal (MvPolynomial α F)} (hI : IsSingleDegGen I) (hIp :
       exact h
     tfae_have 2 -> 3 := by
       rw [mgs_eq_one_iff_kSymmetric (psi_is_symm hIp) hIB]
-      contrapose; intro h; push_neg
+      contrapose; intro h; push Not
       simp only [not_exists, not_and'] at h
       obtain ⟨p, hp, hpI⟩ := psi_homo_gen_of_singleDegGen hI hIp
       specialize h p hpI

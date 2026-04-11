@@ -42,7 +42,7 @@ theorem singleDegGen_iff [DecidableEq α] : IsSingleDegGen I ↔ ∃ n : ℕ, �
   rw [hspan]
 
 
-  push_neg at hzS
+  push Not at hzS
   have hSz : S ⊆ {0} := by exact hzS
   apply ideal_span_subset_zero_singleton at hSz
   rw [hspan, hSz]
@@ -59,7 +59,7 @@ theorem singleDegGen_iff' [DecidableEq α] : IsSingleDegGen I ↔ ∃ S : Set (M
   let hn := minDeg_homo hS h.1
   rw [h.2, hn]; exact h.1
 
-  push_neg at hS
+  push Not at hS
   let hIB := Ideal.span_eq_bot.mpr hS
   rw [← h.2] at hIB
   rw [hIB, minDeg_bot]
@@ -135,11 +135,11 @@ variable [DecidableEq α]
     apply minDeg_homo hS at h
     rw [← h] at heq
     apply Nat.notMem_of_lt_sInf at heq
-    rw [Set.mem_setOf] at heq; push_neg at heq
+    rw [Set.mem_setOf] at heq; push Not at heq
     rw [heq] at hp
     exact hp
 
-    push_neg at hS
+    push Not at hS
     apply Ideal.span_eq_bot.mpr at hS
     rw [hS, ← Submodule.zero_eq_bot, homoSubI_zero] at hp
     exact hp
@@ -154,7 +154,7 @@ theorem homoSubI_span_eq {n : ℕ} {S : Set (MvPolynomial α F)} {f : ℕ → Se
     rw [hI0]
     apply Ideal.IsHomogeneous.bot
 
-    push_neg at hin
+    push Not at hin
     specialize hf i hin
     suffices IsSingleDegGen (Ideal.span (f i)) by exact single_deg_gen_homo this
     apply singleDegGen_iff.mpr; use i; use f i
@@ -163,7 +163,7 @@ theorem homoSubI_span_eq {n : ℕ} {S : Set (MvPolynomial α F)} {f : ℕ → Se
       intro i
       by_cases hin : i ≥ n
       exact homoSubI_span_apply hin (hf i hin)
-      push_neg at hin
+      push Not at hin
       suffices Ideal.span (f i) = 0 by
         rw [this]
         let hn := Nat.ne_of_lt' hin
@@ -196,7 +196,7 @@ theorem homoComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α F)} {S : Se
       intro i hi p hp
       obtain ⟨q, hqS, hq⟩ := hp
       rw [Set.mem_singleton_iff]
-      apply Nat.notMem_of_lt_sInf at hi; rw [Set.mem_setOf] at hi; push_neg at hi
+      apply Nat.notMem_of_lt_sInf at hi; rw [Set.mem_setOf] at hi; push Not at hi
       suffices p ∈ homogeneousSubmoduleI i I by
         rw [hi] at this
         exact this
@@ -241,7 +241,7 @@ theorem homoComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α F)} {S : Se
       rw [homogeneousComponent_eq_zero]
       rw [← hq]; symm
       apply homogeneousComponent_eq_zero
-      apply Finset.mem_range.not.mp at hi; push_neg at hi
+      apply Finset.mem_range.not.mp at hi; push Not at hi
       apply lt_of_lt_of_le ?_ hi
       exact Nat.lt_add_of_pos_right (zero_lt_two)
       exact lt_add_one p.totalDegree
@@ -283,7 +283,7 @@ theorem homoComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α F)} {S : Se
     have hifr : i ∈ Finset.range (p.totalDegree + 1) := by
       contrapose! hbz
       apply homogeneousComponent_eq_zero
-      rw [Finset.mem_range.not] at hbz; push_neg at hbz
+      rw [Finset.mem_range.not] at hbz; push Not at hbz
       exact hbz
     use hifr; use hbz
 

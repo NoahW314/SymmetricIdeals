@@ -59,7 +59,7 @@ lemma coeff_mul_single_homo [DecidableEq α] {S : Set (MvPolynomial α F)} {d : 
       id_eq, smul_eq_mul, mul_one];
     rfl
 
-    push_neg at hb2
+    push Not at hb2
     let hab2 := hab
     apply_fun Finsupp.degree at hab2
     rw [map_add, hb2, hd, Nat.add_eq_right, Finsupp.degree_eq_zero_iff] at hab2
@@ -125,7 +125,7 @@ lemma coeff_mul_single_homo [DecidableEq α] {S : Set (MvPolynomial α F)} {d : 
     rw [← hg]; rfl
 
 
-    push_neg at hdn; specialize hd hdn
+    push Not at hdn; specialize hd hdn
     rw [notMem_support_iff] at hd
     suffices coeff d ((f i)*(g i).1) = coeff (0,d).1 (f i) * coeff (0,d).2 (g i).1 by
       simp only at this
@@ -329,7 +329,7 @@ minDeg (Ideal.span S) = n := by
   have hn : n ∈ {n | homogeneousSubmoduleI n (Ideal.span S) ≠ ⊥} := by
     rw [Set.mem_setOf]
     rw [homoSubI_span n S h]
-    apply Submodule.span_eq_bot.not.mpr; push_neg
+    apply Submodule.span_eq_bot.not.mpr; push Not
     exact hS
   apply antisymm (Nat.sInf_le hn)
   apply le_csInf; use n

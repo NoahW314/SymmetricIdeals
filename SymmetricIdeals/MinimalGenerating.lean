@@ -29,7 +29,7 @@ lemma mgs_pos [hnr : IsNoetherianRing R] (h : I ≠ ⊥) : min_gen_size I > 0 :=
   let S' := SetLike.coe S \ {0}
   have hsf : Fintype S' := by exact Fintype.ofFinite ↑S'
   let S'' := S'.toFinset
-  push_neg; use (S''.card); rw [Set.mem_setOf]
+  push Not; use (S''.card); rw [Set.mem_setOf]
   use S''; constructor; simp only [Set.mem_toFinset, Set.mem_diff, Finset.mem_coe,
     Set.mem_singleton_iff, not_true_eq_false, and_false, not_false_eq_true, S'', S']
   constructor; rfl

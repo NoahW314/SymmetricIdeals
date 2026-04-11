@@ -174,7 +174,7 @@ lemma all_fin_of_lt_fin {r : ℕ} {p : Fin r → Fin r → Prop} (hsymm : ∀ i 
   (h : ∀ i j : Fin r, i < j → p i j) : ∀ i j : Fin r, i ≠ j → p i j := by
     intro i j hij
     wlog hlt : i < j
-    push_neg at hlt; symm at hij
+    push Not at hlt; symm at hij
     let hlt := lt_of_le_of_ne hlt hij
     specialize this hsymm h j i hij hlt
     rw [hsymm]; exact this
@@ -268,7 +268,7 @@ lemma split_orderTypes {f p : MvPolynomial α F} {n : ℕ} (hf : f.IsHomogeneous
       simp only [orderTypes, ne_eq, Set.mem_image, Set.mem_setOf_eq] at hsf
       obtain ⟨e, he, hes⟩ := hsf
       use e; constructor; swap; exact hes
-      push_neg at he; rw [← mem_support_iff] at he
+      push Not at he; rw [← mem_support_iff] at he
 
       rw [Finset.sum_eq_single ⟨e, he⟩]
       simp only [↓reduceIte]
@@ -308,7 +308,7 @@ lemma split_orderTypes {f p : MvPolynomial α F} {n : ℕ} (hf : f.IsHomogeneous
       simp only [coeff_monomial, ite_eq_right_iff]
       contrapose; intro hxf
       rw [Subtype.coe_eq_iff.not]
-      push_neg; intro hefs
+      push Not; intro hefs
       exact hxe
       intro hefc; rw [Set.mem_toFinset] at hefc
       contradiction

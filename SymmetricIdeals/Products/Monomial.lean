@@ -136,7 +136,7 @@ theorem monomialProduct_Psi {I J : Ideal (MvPolynomial α F)} (hIm : ∃ S : Set
     left; simp only [monomial_zero', C_1, symmSpan_one]
     exact top_of_ne_bot_of_isEmpty hIB
 
-    push_neg at hα
+    push Not at hα
     contrapose!; intro h
     obtain ⟨a, haI⟩ := (monomial_iff_symmSpan_monomial hI hIs hIB).mp hIm
     obtain ⟨b, hbJ⟩ := (monomial_iff_symmSpan_monomial hJ hJs hJB).mp hJm
@@ -147,8 +147,8 @@ theorem monomialProduct_Psi {I J : Ideal (MvPolynomial α F)} (hIm : ∃ S : Set
       specialize h b; contrapose! h
       simp only [h, ne_eq, hbJ, implies_true, and_self]
     let n := sSup (Set.range a); let m := sSup (Set.range b)
-    rw [monomial_kSymmetric_iff.not] at ha; push_neg at ha
-    rw [monomial_kSymmetric_iff.not] at hb; push_neg at hb
+    rw [monomial_kSymmetric_iff.not] at ha; push Not at ha
+    rw [monomial_kSymmetric_iff.not] at hb; push Not at hb
     have hafz : a ≠ 0 := by
       contrapose! ha; use 0; rw [ha]
       simp only [Finsupp.coe_zero, Pi.zero_apply, implies_true]
@@ -187,7 +187,7 @@ theorem monomialProduct_Psi {I J : Ideal (MvPolynomial α F)} (hIm : ∃ S : Set
         Equiv.swap_apply_left, ← hyi, Equiv.swap_apply_right, and_true]
       rw [Equiv.swap_apply_of_ne_of_ne hyx hyj]
 
-      push_neg at hyi; let hiy := hyi; symm at hiy
+      push Not at hyi; let hiy := hyi; symm at hiy
       use (Equiv.swap x y) * (Equiv.swap i j)
       rw [Finsupp.mapDomain_equiv_apply, Finsupp.mapDomain_equiv_apply]
       have hess : Equiv.symm (Equiv.swap x y * Equiv.swap i j) = Equiv.symm (Equiv.swap i j) * Equiv.symm (Equiv.swap x y) := by rfl
@@ -245,20 +245,20 @@ theorem monomialProduct_Psi {I J : Ideal (MvPolynomial α F)} (hIm : ∃ S : Set
     have hzx : z ≠ x := by
       contrapose! hac; rw [hac]
       rw [Equiv.swap_apply_left, ne_eq, Nat.add_left_cancel_iff]
-      rw [hσx, hσi, hm]; push_neg; symm; exact hb
+      rw [hσx, hσi, hm]; push Not; symm; exact hb
     have hzi : z ≠ i := by
       contrapose! hac; rw [hac]
       rw [Equiv.swap_apply_right, ne_eq, Nat.add_right_cancel_iff]
-      rw [hn]; push_neg; symm; exact ha
+      rw [hn]; push Not; symm; exact ha
     rw [Equiv.swap_apply_def]
     simp only [hzx, ↓reduceIte, hzi]
 
 
-    apply (Multiset.Nodup.ext ?_ ?_).not.mpr; push_neg
+    apply (Multiset.Nodup.ext ?_ ?_).not.mpr; push Not
     use x; right;
     simp
     constructor; intro hax
-    rw [hσx, hσi, hm]; push_neg; symm; exact hb
+    rw [hσx, hσi, hm]; push Not; symm; exact hb
     intro hax; rw [hσx]; exact hby0
 
 

@@ -188,7 +188,7 @@ lemma homoSubI_orderTypeComponent (a : Multiset ℕ) :
     rw [homoSubI_span a.sum ((orderTypeComponent α F a) : Set (MvPolynomial α F)) (orderTypeComponent_subset_homoSub a)]
     exact Submodule.span_eq (orderTypeComponent α F a)
 
-    push_neg at hp
+    push Not at hp
     apply (Submodule.eq_bot_iff _).mpr at hp
     rw [hp]
     simp only [Submodule.bot_coe, subset_refl, ideal_span_subset_zero_singleton,
@@ -394,7 +394,7 @@ lemma psi_orderTypeComponent (a : Multiset ℕ) :
   IsPrincipalSymmetric (Ideal.span ((orderTypeComponent α F a) : Set (MvPolynomial α F))) := by
     by_cases h : ∃ p : MvPolynomial α F, p ≠ 0 ∧ stronglyHomogeneous p a
     exact psi_orderTypeComponent' h
-    push_neg at h
+    push Not at h
     suffices orderTypeComponent α F a = ⊥ by
       rw [this]
       simp only [Submodule.bot_coe, subset_refl, ideal_span_subset_zero_singleton,
@@ -498,7 +498,7 @@ lemma orderTypes_add_subset {p q : MvPolynomial α F} : orderTypes (p+q) ⊆ ord
   by_cases hdz : coeff d p ≠ 0
   left; use d
 
-  push_neg at hdz
+  push Not at hdz
   rw [hdz, zero_add] at hdc
   right; use d
 
@@ -506,7 +506,7 @@ lemma orderTypes_sum_subset {X : Type*} {s : Finset X} {f : X → MvPolynomial �
   orderTypes (∑ x ∈ s, f x) ⊆ ⋃ x ∈ s, orderTypes (f x) := by
     simp only [orderTypes, ne_eq, Set.image_subset_iff, Set.preimage_iUnion]
     intro d hd; rw [Set.mem_setOf, coeff_sum] at hd
-    push_neg at hd
+    push Not at hd
     apply Finset.exists_ne_zero_of_sum_ne_zero at hd
     obtain ⟨i, his, hi⟩ := hd
     rw [Set.mem_iUnion₂]; use i; use his
@@ -581,7 +581,7 @@ lemma orderTypes_subset_of_add_eq_add {p₁ p₂ q₁ q₂ : MvPolynomial α F} 
 lemma orderTypes_C_mul {p : MvPolynomial α F} {c : F} : orderTypes (c • p) ⊆ orderTypes p := by
   by_cases h : c ≠ 0
   rw [orderTypes_C_mul_ne_zero h]
-  push_neg at h; rw [h, zero_smul, orderTypes_zero]
+  push Not at h; rw [h, zero_smul, orderTypes_zero]
   exact Set.empty_subset (orderTypes p)
 
 @[simp] lemma orderTypes_minus (p : MvPolynomial α F) : orderTypes (-p) = orderTypes p := by
@@ -628,7 +628,7 @@ lemma orderTypes_symmSet {p q : MvPolynomial α F} (h : q ∈ symmSet {p}) : ord
 lemma empty_orderTypes_iff_zero {p : MvPolynomial α F} : orderTypes p = ∅ ↔ p = 0 := by
   constructor; contrapose!; intro h
   rw [ne_eq, eq_zero_iff.not] at h
-  push_neg at h
+  push Not at h
   obtain ⟨d, h⟩ := h
   use orderType d
   exact mem_orderTypes h

@@ -286,7 +286,7 @@ lemma minDeg_pmul_perm_eq_minDeg_symmSpan [DecidableEq α] {p : MvPolynomial α 
     simp only [Set.singleton_subset_iff, SetLike.mem_coe, mem_homogeneousSubmodule]
     exact homo_symmAct σ hp
 
-    rw [ne_eq, Ideal.span_eq_bot]; push_neg
+    rw [ne_eq, Ideal.span_eq_bot]; push Not
     simp only [Set.mem_singleton_iff, ne_eq, exists_eq_left]
     exact (smul_ne_zero_iff_ne σ).mpr hp0
 
@@ -308,7 +308,7 @@ lemma minDeg_pmul [DecidableEq α] {p : MvPolynomial α F} {n : ℕ} {J : Ideal 
     simp only [Set.mem_singleton_iff, ne_eq, exists_eq_left]
     exact hp0
     rw [singleDegGen_iff]; use n; use {p}
-    rw [ne_eq, Ideal.span_eq_bot]; push_neg
+    rw [ne_eq, Ideal.span_eq_bot]; push Not
     simp only [Set.mem_singleton_iff, ne_eq, exists_eq_left]
     exact hp0
 
@@ -343,9 +343,10 @@ lemma lowestDegree_le_highestDegree (p : MvPolynomial α F) : lowestDegree p ≤
   by_cases hp : p = 0
   simp only [hp, lowestDegree_zero, highestDegree_zero, le_refl]
 
-  apply csInf_le_csSup ?_ nonzero_homogeneousComponents_bddAbove (nonzero_homogeneousComponents_nonempty hp)
+  apply csInf_le_csSup (nonzero_homogeneousComponents_nonempty hp) ?_ nonzero_homogeneousComponents_bddAbove
   rw [bddBelow_def]; use 0
   simp only [ne_eq, Set.mem_setOf_eq, zero_le, implies_true]
+
 
 lemma homogeneousComponent_eq_zero_of_lt_lowestDegree {p : MvPolynomial α F} {i : ℕ}
   (h : i < lowestDegree p) : homogeneousComponent i p = 0 := by
@@ -435,7 +436,7 @@ lemma homogeneousComponent_lowestDegree_add_mul {p q : MvPolynomial α F} :
     simp only [ne_eq, Prod.mk.injEq, not_and]
     intro hxq; contrapose! hxl
     rw [← hxq, ← hxl]
-    simp only; push_neg at hxp
+    simp only; push Not at hxp
     contrapose! hxl;
     suffices x.1 = lowestDegree p ∧ x.2 = lowestDegree q by rw [← this.1, ← this.2]
     omega
@@ -767,7 +768,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α F} {n : ℕ} {J : Ideal (MvPoly
       rw [hSJ, Ideal.span_eq_bot]
       exact hJB
     have hSe : S.val.gcd ≠ 0 := by
-      rw [ne_eq, Multiset.gcd_eq_zero_iff]; push_neg
+      rw [ne_eq, Multiset.gcd_eq_zero_iff]; push Not
       simp only [Finset.mem_val]; exact hSe'
     have hSh : (S.val.gcd).IsHomogeneous S.val.gcd.totalDegree := by
       obtain ⟨g, hg, hgz⟩ := hSe'
@@ -844,7 +845,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α F} {n : ℕ} {J : Ideal (MvPoly
         rw [hfgg, hfg']
         use g'; rw [mul_assoc]
       contrapose! hr; unfold Prime;
-      rw [not_and_or, not_and_or]; push_neg; right; left
+      rw [not_and_or, not_and_or]; push Not; right; left
       apply isUnit_of_dvd_unit ?_ hSu
       rw [Multiset.dvd_gcd]
       simp only [Finset.mem_val, Set.mem_toFinset]
