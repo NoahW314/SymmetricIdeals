@@ -9,7 +9,9 @@ import SymmetricIdeals.Product.ProductMgs
 import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
 
 /-!
-
+This module proves that for monomial ideals and ideals in a polynomial ring over a
+  field with two variables, the following three things are equivalent:
+  I is principal, I ^ 2 is a psi, I ^ n is a psi for all n
 -/
 
 variable {α R : Type*} [CommSemiring R] [NoZeroDivisors R] {I : Ideal (MvPolynomial α R)}
@@ -192,7 +194,7 @@ theorem lt_mgs_pow {p : MvPolynomial α R} {m : ℕ} (n : ℕ)
     rw [← Ideal.zero_eq_bot] at hIB ⊢
     exact pow_ne_zero n hIB
 
-theorem pow_isPSI_tfae {I : Ideal (MvPolynomial α R)} (hI : IsSingleDegGen I)
+theorem isPSI_pow_tfae {I : Ideal (MvPolynomial α R)} (hI : IsSingleDegGen I)
     (hIp : IsPrincipalSymmetric I) (hIB : I ≠ ⊥) :
     [∀ n : ℕ, IsPrincipalSymmetric (I ^ n), ∃ m : ℕ, ∀ n ≥ m, IsPrincipalSymmetric (I ^ n),
     minGenSize I = 1].TFAE := by
@@ -215,14 +217,14 @@ theorem pow_isPSI_tfae {I : Ideal (MvPolynomial α R)} (hI : IsSingleDegGen I)
   tfae_finish
 
 
-theorem pow_isPSI_tfae' {p : MvPolynomial α R} {i : ℕ} (hp : p.IsHomogeneous i) :
+theorem isPSI_pow_tfae' {p : MvPolynomial α R} {i : ℕ} (hp : p.IsHomogeneous i) :
     [∀ n, IsPrincipalSymmetric ((symmSpan {p}) ^ n),
     ∃ m, ∀ n ≥ m, IsPrincipalSymmetric ((symmSpan {p}) ^ n),
     kSymmetric p].TFAE := by
   by_cases! hp0 : p = 0
   · simp [hp0]
   rw [← mgs_eq_one_iff_kSymmetric' hp hp0]
-  exact pow_isPSI_tfae (isSingleDegGen_symmSpan hp) (by use p) <| symmSpan_eq_bot_iff.not.mpr hp0
+  exact isPSI_pow_tfae (isSingleDegGen_symmSpan hp) (by use p) <| symmSpan_eq_bot_iff.not.mpr hp0
 
 theorem isPSI_mul_iff_mgs_eq_one {I J : Ideal (MvPolynomial (Fin 2) R)}
     (hI : IsSingleDegGen I) (hJ : IsSingleDegGen J)
@@ -270,7 +272,7 @@ theorem isPSI_mul_iff_mgs_eq_one' {p q : MvPolynomial (Fin 2) R} {n m : ℕ}
   · rwa [ne_eq, symmSpan_eq_bot_iff]
 
 
-theorem isPSI_pow_tfae {I : Ideal (MvPolynomial (Fin 2) R)} (hI : IsSingleDegGen I)
+theorem isPSI_pow_finTwo_tfae {I : Ideal (MvPolynomial (Fin 2) R)} (hI : IsSingleDegGen I)
     (hIp : IsPrincipalSymmetric I) (hIB : I ≠ ⊥) :
     [∀ n, IsPrincipalSymmetric (I ^ n), IsPrincipalSymmetric (I ^ 2), minGenSize I = 1].TFAE := by
   tfae_have 1 -> 2 := fun h ↦ h 2
@@ -289,13 +291,13 @@ theorem isPSI_pow_tfae {I : Ideal (MvPolynomial (Fin 2) R)} (hI : IsSingleDegGen
         exact pow_ne_zero n hIB
   tfae_finish
 
-theorem isPSI_pow_tfae' {p : MvPolynomial (Fin 2) R} {i : ℕ} (hp : p.IsHomogeneous i) :
+theorem isPSI_pow_finTwo_tfae' {p : MvPolynomial (Fin 2) R} {i : ℕ} (hp : p.IsHomogeneous i) :
     [∀ n, IsPrincipalSymmetric (symmSpan {p} ^ n), IsPrincipalSymmetric (symmSpan {p} ^ 2),
     kSymmetric p].TFAE := by
   by_cases! hp0 : p = 0
   · simp [hp0]
   rw [← mgs_eq_one_iff_kSymmetric' hp hp0]
-  refine isPSI_pow_tfae (isSingleDegGen_symmSpan hp) (by use p) ?_
+  refine isPSI_pow_finTwo_tfae (isSingleDegGen_symmSpan hp) (by use p) ?_
   rwa [ne_eq, symmSpan_eq_bot_iff]
 
 end Field
