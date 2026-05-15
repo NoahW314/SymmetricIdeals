@@ -1,150 +1,120 @@
+/-
+Copyright (c) 2026 Noah Walker. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Noah Walker
+-/
+
 import Mathlib
 import SymmetricIdeals.MinDeg
 import SymmetricIdeals.SingleDegGen
 import SymmetricIdeals.MinimalGenerating
+import SymmetricIdeals.Upstream
 
 
 open MvPolynomial
 
-variable {α F : Type*} [Field F]
+variable {α R : Type*} [Field R] {I : Ideal (MvPolynomial α R)} [Finite α]
 
 attribute [local instance] MvPolynomial.gradedAlgebra
 
-variable {I : Ideal (MvPolynomial α F)}
+section Ring
 
+variable {R : Type*} [CommRing R] [IsNoetherianRing R] {I : Ideal (MvPolynomial α R)}
 
-variable [Finite α]
+lemma homogSubI_mod_fin (n : ℕ) (I : Ideal (MvPolynomial α R)) :
+    Module.Finite R (homogeneousSubmoduleI n I) := by
+  rw [Module.Finite.iff_fg]
+  exact Submodule.FG.of_le (homogeneousSubmodule_fg n) inf_le_left
 
-
-lemma homoSubI_mod_fin (n : ℕ) (I : Ideal (MvPolynomial α F)) : Module.Finite F (homogeneousSubmoduleI n I) := by
-  suffices Module.Finite F (homogeneousSubmodule α F n) by
-    apply Submodule.finiteDimensional_inf_left (homogeneousSubmodule α F n) (Submodule.restrictScalars F I)
-  rw [homogeneousSubmodule_eq_finsupp_supported]
-  suffices Finite {d : α →₀ ℕ | d.degree = n} by
-    apply Module.Finite.of_basis (basisRestrictSupport F {d | d.degree = n})
-  have hfbdd : Finite {d : α →₀ ℕ | ∀ a, d a ≤ n} :=
-    ((Set.Finite.pi' fun _ ↦ Set.finite_le_nat _).preimage DFunLike.coe_injective.injOn).to_subtype
-  apply Finite.Set.subset {d : α →₀ ℕ | ∀ a, d a ≤ n}
-  intro d hd; rw [Set.mem_setOf] at hd
-  rw [Set.mem_setOf]; intro a
-  rw [← hd]
-  exact Finsupp.le_degree a d
-
-lemma homoSubI_mod_fin' (n : ℕ) (I : Ideal (MvPolynomial α F)) : Module.Finite F (Submodule.span F ((homogeneousSubmoduleI n I) : Set (MvPolynomial α F))) := by
+lemma homogSubI_mod_fin' (n : ℕ) (I : Ideal (MvPolynomial α R)) :
+    Module.Finite R (Submodule.span R ((homogeneousSubmoduleI n I) : Set (MvPolynomial α R))) := by
   rw [Submodule.span_eq]
-  exact homoSubI_mod_fin n I
+  exact homogSubI_mod_fin n I
 
-lemma finrank_mem_minDeg (h : IsSingleDegGen I) : Module.finrank F (homogeneousSubmoduleI (minDeg I) I)
-  ∈ {n : ℕ | ∃ S : Finset (MvPolynomial α F), 0 ∉ S ∧ S.card = n ∧ I = Ideal.span S} := by
-    rw [Set.mem_setOf]
-    have hvsf := homoSubI_mod_fin' (minDeg I) I
-    obtain ⟨S, hsub, hcard, hspan, hlid⟩ := Submodule.exists_finset_span_eq_linearIndepOn F ((homogeneousSubmoduleI (minDeg I) I) : Set (MvPolynomial α F))
-    use S; constructor;
-    apply LinearIndepOn.zero_notMem_image at hlid
-    simp only [id_eq, Set.image_id', Finset.mem_coe] at hlid
-    exact hlid
+omit [Finite α] [IsNoetherianRing R] in
+lemma finrank_hom_top [IsDomain R] : Module.finrank R (homogeneousSubmoduleI (minDeg
+    (⊤ : Ideal (MvPolynomial α R))) (⊤ : Ideal (MvPolynomial α R))) = 1 := by
+  rw [minDeg_top, ← Ideal.span_singleton_one, homogSubI_span]
+  · rw [_root_.finrank_eq_one ⟨1, by simp⟩]
+    · simp
+    · simp [Submodule.mem_span_singleton]
+  · simp only [Set.singleton_subset_iff, SetLike.mem_coe, mem_homogeneousSubmodule,
+      isHomogeneous_one α R]
 
-    constructor
-    rw [hcard]
-    rw [Submodule.span_eq]
-
-    rw [h]; apply Submodule.span_eq_span
-    rw [← Submodule.span_eq (homogeneousSubmoduleI (minDeg I) I), ← hspan]
-    apply Submodule.span_subset_span
-
-    apply subset_trans hsub
-    exact Submodule.subset_span
-
-theorem mgs_le_rank (h : IsSingleDegGen I) : min_gen_size I ≤ Module.finrank F (homogeneousSubmoduleI (minDeg I) I) := by
-  apply Nat.sInf_le (finrank_mem_minDeg h)
+end Ring
 
 
+lemma finrank_mem_minDeg (h : IsSingleDegGen I) :
+    ∃ S : Finset (MvPolynomial α R), (0 ∉ S ∧ I = Ideal.span S) ∧
+    S.card = Module.finrank R (homogeneousSubmoduleI (minDeg I) I) := by
+  have := homogSubI_mod_fin' (minDeg I) I
+  obtain ⟨S, hsub, hcard, hspan, hlid⟩ := Submodule.exists_finset_span_eq_linearIndepOn R
+    (SetLike.coe (homogeneousSubmoduleI (minDeg I) I))
+  rw [Submodule.span_eq] at hspan hcard
+  use S
+  constructor
+  constructor
+  · apply LinearIndepOn.zero_notMem_image at hlid
+    simpa using hlid
+  · rw [h, ← hspan, Ideal.span, Submodule.span_span_of_tower]
+  · rw [hcard]
 
-variable [DecidableEq α]
+theorem mgs_le_finrank (h : IsSingleDegGen I) : minGenSize I ≤
+    Module.finrank R (homogeneousSubmoduleI (minDeg I) I) := by
+  refine Nat.sInf_le ?_
+  simp only [Set.mem_image, Set.mem_setOf]
+  exact finrank_mem_minDeg h
 
-open Classical
-
-omit [Finite α] in lemma finrank_hom_top : Module.finrank F (homogeneousSubmoduleI (minDeg (⊤ : Ideal (MvPolynomial α F))) (⊤ : Ideal (MvPolynomial α F))) = 1 := by
-  rw [minDeg_top, ← Ideal.span_singleton_one, homoSubI_span 0 {1}]
-  apply finrank_span_singleton
-  exact Ne.symm (zero_ne_one' (MvPolynomial α F))
-  simp only [Set.singleton_subset_iff, SetLike.mem_coe, mem_homogeneousSubmodule]
-  exact isHomogeneous_one α F
-
-theorem mgs_ge_rank (h : IsSingleDegGen I) : min_gen_size I ≥ Module.finrank F (homogeneousSubmoduleI (minDeg I) I) := by
-  by_cases hIT : I = ⊤
-  rw [hIT, mgs_top, finrank_hom_top]
-
-  by_cases hmindeg : minDeg I = 0
-  let hI0 := zero_of_minDeg_zero (single_deg_gen_homo h) hIT hmindeg
-  rw [Submodule.zero_eq_bot] at hI0
-  rw [hmindeg, hI0, mgs_bot, ← Submodule.zero_eq_bot, homoSubI_zero]
-  simp only [Submodule.zero_eq_bot, finrank_bot, ge_iff_le, le_refl]
-
-
-  have hmgs : min_gen_size I ∈ { n : ℕ | ∃ S : Finset (MvPolynomial α F), 0 ∉ S ∧ S.card = n ∧ I = Ideal.span S } := by
-    apply Nat.sInf_mem
-    use Module.finrank F (homogeneousSubmoduleI (minDeg I) I)
+theorem mgs_ge_finrank (h : IsSingleDegGen I) : minGenSize I ≥
+    Module.finrank R (homogeneousSubmoduleI (minDeg I) I) := by
+  classical
+  have hmgs : minGenSize I ∈ Finset.card ''
+      {S : Finset (MvPolynomial α R) | 0 ∉ S ∧ I = Ideal.span (SetLike.coe S)} := by
+    refine Nat.sInf_mem ?_
+    use Module.finrank R (homogeneousSubmoduleI (minDeg I) I)
     exact finrank_mem_minDeg h
-  rw [Set.mem_setOf] at hmgs
-  obtain ⟨S, hsz, hcard, hspan⟩ := hmgs
+  simp only [Set.mem_image, Set.mem_setOf_eq] at hmgs
+  obtain ⟨S, ⟨hsz, hspan⟩, hcard⟩ := hmgs
   rw [← hcard, ge_iff_le]
-  have hfin : Fintype ((homogeneousComponent (minDeg I)) '' SetLike.coe S) := by apply Fintype.ofFinite
-  let S' := ((homogeneousComponent (minDeg I)) '' SetLike.coe S).toFinset
+  let S' := Finset.image (homogeneousComponent (minDeg I)) S
   have hhcS : ∀ p : S', ∃ q : S, (homogeneousComponent (minDeg I)) q = p.1 := by
-      intro p; let hp := p.2
-      unfold S' at hp
-      simp only [Set.mem_toFinset, Set.mem_image, Finset.mem_coe] at hp
+      intro ⟨p, hp⟩
+      rw [Finset.mem_image] at hp
       obtain ⟨q, hq, hqp⟩ := hp
       use ⟨q, hq⟩
-  have hSS : S'.card ≤ S.card := by
-    let f : S' → S := fun p : S' => Classical.choose (hhcS p)
-    suffices Function.Injective f by exact Finset.card_le_card_of_injective this
-    intro p q hf
-    unfold f at hf
-    apply Subtype.coe_inj.mp
-    rw [← Classical.choose_spec (hhcS p), ← Classical.choose_spec (hhcS q), hf]
-  apply le_trans ?_ hSS
-  have hscoe : S'.card = (SetLike.coe S').toFinset.card := by rw [Finset.toFinset_coe S']
-  rw [hscoe]
-  suffices Module.finrank F (homogeneousSubmoduleI (minDeg I) I) ≤ Module.finrank F (Submodule.span F (SetLike.coe S')) by
-    apply le_trans this (finrank_span_le_card (SetLike.coe S'))
-  apply Submodule.finrank_mono
+  trans S'.card
+  · suffices Module.finrank R (homogeneousSubmoduleI (minDeg I) I) ≤ Module.finrank R
+        (Submodule.span R (SetLike.coe S')) by
+      refine le_trans this ?_
+      nth_rw 4 [← Finset.toFinset_coe S']
+      exact finrank_span_le_card _
+    refine Submodule.finrank_mono ?_
+    rw [← homogSubI_span (minDeg I)]
+    · exact homogComps_gen_singleDegGen_ideal_finset h hspan
+    · intro p hp
+      simp only [Finset.coe_image, Set.mem_image, SetLike.mem_coe, S'] at hp
+      obtain ⟨x, hx, hp⟩ := hp
+      rw [← hp, SetLike.mem_coe, mem_homogeneousSubmodule]
+      exact homogeneousComponent_isHomogeneous _ _
+  · exact Finset.card_image_le
 
 
-  rw [← homoSubI_span (minDeg I)]; swap
-  intro p hp
-  simp only [Set.toFinset_image, Finset.toFinset_coe, Finset.coe_image, Set.mem_image,
-    Finset.mem_coe, S'] at hp
-  obtain ⟨x, hxS, hp⟩ := hp
-  rw [← hp, SetLike.mem_coe,
-    mem_homogeneousSubmodule (minDeg I) (homogeneousComponent (minDeg I) x)]
-  exact homogeneousComponent_isHomogeneous (minDeg I) x
+theorem mgs_eq_finrank (h : IsSingleDegGen I) : minGenSize I =
+    Module.finrank R (homogeneousSubmoduleI (minDeg I) I) :=
+  antisymm (mgs_le_finrank h) (mgs_ge_finrank h)
 
-  simp only [Set.toFinset_image, Finset.toFinset_coe, Finset.coe_image, S']
-  apply homoComps_gen_singleDegGen_ideal h hspan
+lemma mgs_le_mgs {I J : Ideal (MvPolynomial α R)} (hI : IsSingleDegGen I) (hJ : IsSingleDegGen J)
+    (h : minDeg I = minDeg J) (hIJ : I ≤ J) : minGenSize I ≤ minGenSize J := by
+  rw [mgs_eq_finrank hI, mgs_eq_finrank hJ]
+  have := homogSubI_mod_fin (minDeg J) J
+  refine Submodule.finrank_mono ?_
+  rw [h]
+  exact homogSubI_monotone _ hIJ
 
-
-theorem mgs_eq_rank (h : IsSingleDegGen I) : min_gen_size I = Module.finrank F (homogeneousSubmoduleI (minDeg I) I) := by
-  exact antisymm (mgs_le_rank h) (mgs_ge_rank h)
-
-
-lemma mgs_le_mgs {I J : Ideal (MvPolynomial α F)} (hI : IsSingleDegGen I) (hJ : IsSingleDegGen J)
-  (h : minDeg I = minDeg J) : I ≤ J → min_gen_size I ≤ min_gen_size J := by
-    intro hIJ
-    rw [mgs_eq_rank hI, mgs_eq_rank hJ]
-    let hfin := homoSubI_mod_fin (minDeg J) J
-    apply Submodule.finrank_mono
-    unfold homogeneousSubmoduleI
-    apply inf_le_inf
-    rw [h]
-    exact hIJ
-
-lemma mgs_lt_mgs {I J : Ideal (MvPolynomial α F)} (hI : IsSingleDegGen I) (hJ : IsSingleDegGen J)
-  (h : minDeg I = minDeg J) : I < J → min_gen_size I < min_gen_size J := by
-    intro hIJ
-    rw [mgs_eq_rank hI, mgs_eq_rank hJ]
-    let hfin := homoSubI_mod_fin (minDeg J) J
-    apply Submodule.finrank_lt_finrank_of_lt
-    rw [← h]
-    apply homoSubI_strictMono (minDeg I) h (rfl) hI hJ hIJ
+lemma mgs_lt_mgs {I J : Ideal (MvPolynomial α R)} (hI : IsSingleDegGen I) (hJ : IsSingleDegGen J)
+    (h : minDeg I = minDeg J) (hIJ : I < J) : minGenSize I < minGenSize J := by
+  rw [mgs_eq_finrank hI, mgs_eq_finrank hJ]
+  have := homogSubI_mod_fin (minDeg J) J
+  refine Submodule.finrank_lt_finrank_of_lt ?_
+  rw [← h]
+  exact homogSubI_strictMono (minDeg I) h rfl hI hJ hIJ

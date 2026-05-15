@@ -1,271 +1,213 @@
+/-
+Copyright (c) 2026 Noah Walker. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Noah Walker
+-/
+
 import Mathlib
 import SymmetricIdeals.PsiObstructions
 
-variable {α F : Type*} [Field F]
-variable {I : Ideal (MvPolynomial α F)}
+variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 attribute [local instance] MvPolynomial.gradedAlgebra
 
-open MvPolynomial
+open MvPolynomial Rename Equiv
 
-variable [DecidableEq α]
+lemma span_orderTypeComponent_le_symmSpan {p : MvPolynomial α R} {a : Multiset ℕ}
+    (ha : a ∈ orderTypes p)
+    (hm : ∃ S : Set (α →₀ ℕ), symmSpan {p} = Ideal.span ((fun d => monomial d (1 : R)) '' S)) :
+    Ideal.span (orderTypeComponent α R a) ≤ symmSpan {p} := by
+  classical
+  simp only [Finset.mem_image, mem_support_iff, ne_eq] at ha
+  obtain ⟨d, hd0, hda⟩ := ha
+  suffices (monomial d (1 : R)) ∈ symmSpan {p} by
+    apply symmSpan_singleton_le_of_mem at this
+    rwa [symmSpan_monomial_eq_span_orderTypeComponent, hda] at this
+  obtain ⟨S, hm⟩ := hm
+  have hp : p ∈ symmSpan {p} := mem_symmSpan_self
+  rw [hm, mem_ideal_span_monomial_image] at hp
+  rw [← ne_eq, ← mem_support_iff] at hd0
+  simp [hm, mem_ideal_span_monomial_image, hp d hd0]
 
-lemma span_orderTypeComponent_le_symmSpan {p : MvPolynomial α F} {a : Multiset ℕ}
-  (ha : a ∈ orderTypes p) (hm : ∃ S : Set (α →₀ ℕ), symmSpan {p} = Ideal.span ((fun d => monomial d (1 : F)) '' S)) :
-  Ideal.span (orderTypeComponent α F a) ≤ symmSpan {p} := by
-    simp only [orderTypes, ne_eq, Set.mem_image, Set.mem_setOf_eq] at ha
-    obtain ⟨d, hdz, hda⟩ := ha
-    suffices (monomial d (1 : F)) ∈ symmSpan {p} by
-      apply symmSpan_singleton_le_of_mem at this
-      rw [monomial_symmSpan_orderTypeComponent, hda] at this
-      exact this
-    obtain ⟨S, hm⟩ := hm
-    have hp : p ∈ symmSpan {p} := mem_symmSpan_self
-    rw [hm, mem_ideal_span_monomial_image] at hp
-    rw [hm, mem_ideal_span_monomial_image]
-    simp only [mem_support_iff, coeff_monomial, ne_eq, ite_eq_right_iff, one_ne_zero, imp_false,
-      Decidable.not_not, forall_eq']
-    rw [← ne_eq, ← mem_support_iff] at hdz
-    exact hp d hdz
+lemma symmSpan_eq_span_orderTypeComponent {p : MvPolynomial α R} {a : Multiset ℕ}
+    (hm : ∃ S : Set (α →₀ ℕ), symmSpan {p} = Ideal.span ((fun d => monomial d (1 : R)) '' S))
+    (hp : p.IsStronglyHomogeneous a) (hp0 : p ≠ 0) :
+    symmSpan {p} = Ideal.span (orderTypeComponent α R a) := by
+  refine le_antisymm (symmSpan_le_span_orderTypeComponent hp) ?_
+  refine span_orderTypeComponent_le_symmSpan ?_ hm
+  simp [(orderTypes_singleton_iff_isStronglyHomogeneous hp0).mpr hp]
 
-lemma symmSpan_eq_span_orderTypeComponent {p : MvPolynomial α F} {a : Multiset ℕ}
-  (hm : ∃ S : Set (α →₀ ℕ), symmSpan {p} = Ideal.span ((fun d => monomial d (1 : F)) '' S))
-  (hp : stronglyHomogeneous p a) (hpz : p ≠ 0) : symmSpan {p} = Ideal.span (orderTypeComponent α F a) := by
-    apply antisymm (subset_orderTypeComponent hp)
-    apply span_orderTypeComponent_le_symmSpan ?_ hm
-    rw [orderTypes_singleton_iff_stronglyHomogeneous hpz] at hp
-    rw [hp]; rfl
-
-lemma le_symmSpan_of_le_sup_symmSpan {S : Finset (Multiset ℕ)} {a : S} {g : S → MvPolynomial α F}
-  (hdis : ∀ a b : S, a ≠ b → Disjoint (orderTypes (g a)) (orderTypes (g b)))
-  (hag : orderTypes (g a) = {a.1}) (hgh : ∀ b, (g b).IsHomogeneous (a.1.sum)) :
-  Ideal.span (orderTypeComponent α F a) ≤ ⨆ b, symmSpan {g b} →
-  Ideal.span (orderTypeComponent α F a) ≤ symmSpan {g a} := by
-    intro h
-    apply Ideal.span_le.mpr
-    intro p hp
-    by_cases hpz : p = 0
-    rw [hpz, symmSpan]; simp only [SetLike.mem_coe, Submodule.zero_mem]
-
-    let hpsh := hp
-    simp only [SetLike.mem_coe, mem_orderTypeComponent] at hpsh
-    apply Ideal.subset_span at hp
-    apply h at hp
-    have hp : p ∈ ⨆ b, Submodule.span F (symmSet {g b}) := by
-      have hb : ∀ b, Submodule.span F (symmSet {g b}) = homogeneousSubmoduleI a.1.sum (Ideal.span (symmSet {g b})) := by
-        intro b; symm
-        apply homoSubI_span
-        apply symmSet_homo_singleton (hgh b)
-      simp only [hb]
-      rw [← homoSubI_iSup, homogeneousSubmoduleI, Submodule.mem_inf]
-      constructor; rw [mem_homogeneousSubmodule]
-      exact isHomogeneous_of_stronglyHomogeneous a hpsh
-      rw [Submodule.restrictScalars_mem]
-      unfold symmSpan at hp
-      exact hp
-
+lemma le_symmSpan_of_le_sup_symmSpan {S : Finset (Multiset ℕ)} {a : S} {g : S → MvPolynomial α R}
+    (hdis : ∀ a b : S, a ≠ b → Disjoint (orderTypes (g a)) (orderTypes (g b)))
+    (hag : orderTypes (g a) = {a.1}) (hgh : ∀ b, (g b).IsHomogeneous (a.1.sum))
+    (h : Ideal.span (orderTypeComponent α R a) ≤ ⨆ b, symmSpan {g b}) :
+    Ideal.span (orderTypeComponent α R a) ≤ symmSpan {g a} := by
+  rw [Ideal.span_le]
+  intro p hp
+  by_cases! hp0 : p = 0
+  · simp [hp0, symmSpan]
+  have hpsh := hp
+  simp only [SetLike.mem_coe, mem_orderTypeComponent_iff] at hpsh
+  apply Ideal.subset_span at hp
+  apply h at hp
+  have hp : p ∈ ⨆ b, Submodule.span R (symmSet {g b}) := by
+    have hb : ∀ b, Submodule.span R (symmSet {g b}) =
+        homogeneousSubmoduleI a.1.sum (Ideal.span (symmSet {g b})) := by
       intro b
-      rw [← symmSpan]
-      apply single_deg_gen_homo
-      apply singleDegGen_of_symmSpan (hgh b)
-    rw [Submodule.mem_iSup_iff_exists_finset] at hp
-    obtain ⟨s, hp⟩ := hp
-    rw [Submodule.mem_iSup_finset_iff_exists_sum] at hp
-    obtain ⟨μ, hp⟩ := hp
-    suffices ∀ i ∈ s, i ≠ a → (μ i).1 = 0 by
-      rw [Finset.sum_eq_ite a this] at hp
-      rw [← hp]
-      by_cases has : a ∈ s
-      simp only [has, ↓reduceIte, SetLike.mem_coe, symmSpan]
-      let hμ := (μ a).2
-      apply Submodule.span_subset_span F (MvPolynomial α F) at hμ
-      exact hμ
+      exact (homogSubI_span _ _ <| symmSet_subset_homogSub_of_isHomogeneous (hgh b)).symm
+    simp_rw [hb]
+    rw [← homogSubI_iSup, homogeneousSubmoduleI, Submodule.mem_inf, mem_homogeneousSubmodule]
+    constructor
+    · exact isHomogeneous_of_isStronglyHomogeneous a hpsh
+    · rwa [Submodule.restrictScalars_mem]
+    intro b
+    exact isHomogeneous_of_isSingleDegGen (isSingleDegGen_symmSpan (hgh b))
+  rw [Submodule.mem_iSup_iff_exists_finsupp] at hp
+  obtain ⟨φ, hφ, hp⟩ := hp
+  suffices ∀ i : S, i ≠ a → φ i = 0 by
+    rw [← hp, Finsupp.sum_eq_single a]
+    · exact Submodule.span_subset_span R _ _ (hφ a)
+    · grind
+    · simp
+  intro i hia
+  by_cases! his : i ∉ φ.support
+  · simpa using his
+  suffices orderTypes (φ i) ⊆ (orderTypes p) ∩ (orderTypes (g i))  by
+    simpa [(orderTypes_singleton_iff_isStronglyHomogeneous hp0).mpr hpsh,
+      ← hag, Finset.disjoint_iff_inter_eq_empty.mp (hdis a i hia.symm)] using this
+  have hjg : ∀ j : S, orderTypes (φ j) ⊆ orderTypes (g j) := by
+    intro j
+    obtain ⟨f, t, ht, hf, hφj⟩ := Submodule.mem_span_iff_exists_finset_subset.mp (hφ j)
+    rw [← hφj]
+    refine subset_trans orderTypes_sum_subset ?_
+    simp only [Finset.biUnion_subset_iff_forall_subset]
+    intro d hd
+    refine subset_trans orderTypes_smul ?_
+    apply ht at hd
+    rw [mem_symmSet_singleton] at hd
+    obtain ⟨σ, hd⟩ := hd
+    rw [← hd, orderTypes_perm]
+  simp only [← hp, Finsupp.sum, Finset.subset_inter_iff, hjg i, and_true]
+  rw [orderTypes_sum]
+  · exact Finset.subset_biUnion_of_mem (fun x ↦ orderTypes (φ x)) his
+  · exact fun x y _ _ hxy ↦ Disjoint.mono (hjg x) (hjg y) <| hdis x y hxy
 
-      simp only [has, ↓reduceIte, SetLike.mem_coe, Submodule.zero_mem]
+lemma mem_orderTypes_isHomogeneous {p : MvPolynomial α R} {n : ℕ} {a : Multiset ℕ}
+    (hp : p.IsHomogeneous n) (ha : a ∈ orderTypes p) : n = a.sum := by
+  obtain ⟨d, hd, hda⟩ := Finset.mem_image.mp ha
+  simp [← hda, orderType_sum_eq_degree, ← hp (mem_support_iff.mp hd),
+    Finsupp.degree_eq_weight_one, Finsupp.weight_apply]
 
-    intro i his hia
-    suffices orderTypes ((μ i).1) ⊆ (orderTypes p) ∩ (orderTypes (g i))  by
-      rw [orderTypes_singleton_iff_stronglyHomogeneous hpz] at hpsh
-      rw [hpsh, ← hag, Set.inter_comm, Disjoint.inter_eq (hdis i a hia)] at this
-      rw [Set.subset_empty_iff, empty_orderTypes_iff_zero] at this
-      exact this
-    have hjg : ∀ j ∈ s, orderTypes (μ j).1 ⊆ orderTypes (g j) := by
-      intro j hjs
-      let hμ := (μ j).2
-      rw [Submodule.mem_span_iff_exists_finset_subset] at hμ
-      obtain ⟨f, t, ht, hf, hμ⟩ := hμ
-      rw [← hμ]
-      apply subset_trans orderTypes_sum_subset
-      simp only [Set.iUnion_subset_iff]
-      intro q hq
-      apply subset_trans orderTypes_C_mul
-      apply ht at hq
-      rw [mem_symmSet_singleton] at hq
-      obtain ⟨σ, hq⟩ := hq
-      rw [← hq]
-      exact orderTypes_symm_subset
-    apply Set.subset_inter ?_ (hjg i his)
-    rw [← hp, orderTypes_sum]
-    exact Set.subset_iUnion₂_of_subset i his fun ⦃a⦄ a ↦ a
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] {I : Ideal (MvPolynomial α R)}
 
-    intro x y hxs hys hxy
-    apply Disjoint.mono (hjg x hxs) (hjg y hys)
-    exact hdis x y hxy
-
-
-theorem stronglyHomogeneous_of_homogeneous {p : MvPolynomial α F}
-  (hm : ∃ S : Set (α →₀ ℕ), symmSpan {p} = Ideal.span ((fun d => monomial d (1 : F)) '' S)) (n : ℕ) :
-  p.IsHomogeneous n → ∃ a : Multiset ℕ, stronglyHomogeneous p a := by
-    intro hp
-    by_cases hpz : p = 0
-    use 0; rw [hpz]; exact zero_stronglyHomogeneous 0
-    let S := Finset.image orderType p.support
-    let g : S → MvPolynomial α F := fun a => ∑ d ∈ {d ∈ p.support | orderType d = a}, monomial d (coeff d p)
-
-    have hgp : p = ∑ a, g a := by
-      ext d; rw [coeff_sum]; unfold g
-      simp only [coeff_sum, coeff_monomial, Finset.sum_ite_eq',
-        Finset.mem_filter, mem_support_iff, ne_eq]
-      rw [Finset.sum_ite]
-      simp only [Finset.mem_filter, mem_support_iff, ne_eq, Finset.sum_const,
-        nsmul_eq_mul, not_and, mul_zero, add_zero]
-      by_cases hdpz : coeff d p = 0
-      rw [hdpz, mul_zero]
-
-      suffices Finset.card {x : S | d ∈ {e ∈ p.support | orderType e = x}} = 1 by
-        rw [this]; simp only [Nat.cast_one, one_mul]
-      rw [Finset.card_eq_one]
-      have hdS : orderType d ∈ S := by
-        unfold S
-        simp only [Finset.mem_image, mem_support_iff, ne_eq]
-        use d
-      use ⟨orderType d, hdS⟩
-      rw [Finset.eq_singleton_iff_unique_mem]; constructor
-      simp only [Finset.mem_filter, mem_support_iff, ne_eq, Finset.univ_eq_attach,
-        Finset.mem_attach, and_true, true_and]
-      exact hdpz
-
-      intro x hx
-      simp only [Finset.mem_filter, mem_support_iff, ne_eq, Finset.univ_eq_attach,
-        Finset.mem_attach, true_and] at hx
-      apply And.right at hx; symm at hx
-      rw [Subtype.coe_eq_iff] at hx
-      obtain ⟨_, hx⟩ := hx
-      exact hx
-
-    have hgsh : ∀ a, stronglyHomogeneous (g a) a := by
-      intro a; unfold stronglyHomogeneous
-      intro d hd; unfold g at hd
-      simp only [coeff_sum, coeff_monomial, Finset.sum_ite_eq', Finset.mem_filter, mem_support_iff,
-        ne_eq, ite_eq_right_iff, and_imp, Classical.not_imp] at hd
-      exact hd.2.1
-    have hmdp : ∀ a : S, minDeg (symmSpan {p}) = a.1.sum := by
-      intro a
-      rw [minDeg_symmSpan hp hpz]
-      let ha := a.2; unfold S at ha
-      rw [Finset.mem_image] at ha
-      obtain ⟨d, hd⟩ := ha
-      rw [← hd.2, orderType_sum_eq_degree]
-      rw [mem_support_iff] at hd
-      rw [← hp hd.1]
-      simp [Finsupp.weight, Finsupp.linearCombination, Finsupp.degree, Finsupp.sum]
-    have hgh : ∀ a, (g a).IsHomogeneous (minDeg (symmSpan {p})) := by
-      intro a
-      rw [hmdp a]
-      exact isHomogeneous_of_stronglyHomogeneous a (hgsh a)
-    have hgz : ∀ a, g a ≠ 0 := by
-      intro a; rw [ne_zero_iff]
-      let ha := a.2; unfold S at ha
-      rw [Finset.mem_image] at ha
-      obtain ⟨d, hd⟩ := ha
-      rw [mem_support_iff] at hd
-      use d; unfold g
-      simp only [coeff_sum, coeff_monomial, Finset.sum_ite_eq', Finset.mem_filter, mem_support_iff,
-        ne_eq, hd, not_false_eq_true, and_self, ↓reduceIte]
-    have hgd : ∀ a b, a ≠ b → Disjoint (orderTypes (g a)) (orderTypes (g b)) := by
-      intro a b hab
-      rw [(orderTypes_singleton_iff_stronglyHomogeneous (hgz a)).mp (hgsh a)]
-      rw [(orderTypes_singleton_iff_stronglyHomogeneous (hgz b)).mp (hgsh b)]
-      rw [Set.disjoint_singleton, Subtype.coe_ne_coe]
-      exact hab
-    have hgi : ∀ a, g a ∈ symmSpan {p} := by
-      intro a; unfold g symmSpan
-      apply Submodule.sum_mem
-      intro d hd; simp only [Finset.mem_filter] at hd
-      suffices monomial d 1 ∈ Ideal.span (symmSet {p}) by
-        apply Submodule.smul_mem _ (C (coeff d p)) at this
-        simp only [C_eq_smul_one, smul_eq_mul, Algebra.smul_mul_assoc, one_mul, smul_monomial,
-          mul_one] at this
-        exact this
-      obtain ⟨T, hT⟩ := hm; unfold symmSpan at hT; rw [hT]
-      have hpI : p ∈ symmSpan {p} := mem_symmSpan_self
-      rw [symmSpan, hT, mem_ideal_span_monomial_image] at hpI
-      rw [mem_ideal_span_monomial_image]
-      simp only [mem_support_iff, coeff_monomial, ne_eq, ite_eq_right_iff, one_ne_zero, imp_false,
-        Decidable.not_not, forall_eq']
-      exact hpI d hd.1
-    have hgot : ∀ a, symmSpan {g a} = Ideal.span (orderTypeComponent α F a) := by
-      intro a
-      apply span_orderTypeComponent_le_symmSpan (mem_orderTypes_iff_image_support.mpr a.2) at hm
-      rw [hgp] at hm
-      apply le_trans' symmSpan_sum_le_sup_symmSpan at hm
-      apply le_symmSpan_of_le_sup_symmSpan hgd at hm
-      symm; apply antisymm hm
-
-      apply subset_orderTypeComponent
+theorem isStronglyHomogeneous_of_monomial_ideal {p : MvPolynomial α R} (n : ℕ)
+    (hm : ∃ S : Set (α →₀ ℕ), symmSpan {p} = Ideal.span ((fun d => monomial d (1 : R)) '' S))
+    (hp : p.IsHomogeneous n) : ∃ a : Multiset ℕ, IsStronglyHomogeneous p a := by
+  classical
+  by_cases hp0 : p = 0
+  · use 0
+    simp [hp0]
+  let g : (orderTypes p) → MvPolynomial α R :=
+    fun a => ∑ d ∈ p.support with orderType d = a, monomial d (coeff d p)
+  have hgp : p = ∑ a, g a := by
+    simp only [Finset.univ_eq_attach, Finset.sum_filter, g]
+    nth_rw 1 [Finset.sum_comm, as_sum p]
+    refine Finset.sum_congr rfl ?_
+    intro d hd'
+    symm
+    have hd : orderType d ∈ orderTypes p := by
+      rw [mem_support_iff] at hd'
+      exact mem_orderTypes_of_coeff_ne_zero hd'
+    nth_rw 2 [show monomial d (coeff d p) = if orderType d =
+      (⟨orderType d, hd⟩ : orderTypes p).1 then monomial d (coeff d p) else 0 by simp]
+    exact Finset.sum_eq_single_of_mem _ (Finset.mem_univ _) (by grind)
+  have hgsh : ∀ a, IsStronglyHomogeneous (g a) a := by
+    intro a d hd
+    simp only [coeff_sum, coeff_monomial, Finset.sum_ite_eq', Finset.mem_filter, mem_support_iff,
+      ne_eq, ite_eq_right_iff, and_imp, Classical.not_imp, g] at hd
+    exact hd.2.1
+  have hmdp : ∀ a ∈ orderTypes p, minDeg (symmSpan {p}) = a.sum := by
+    intro a ha
+    rw [minDeg_symmSpan hp hp0]
+    exact mem_orderTypes_isHomogeneous hp ha
+  have hgh : ∀ a, (g a).IsHomogeneous (minDeg (symmSpan {p})) := by
+    intro a
+    rw [hmdp a a.2]
+    exact isHomogeneous_of_isStronglyHomogeneous a (hgsh a)
+  have hgz : ∀ a, g a ≠ 0 := by
+    intro ⟨a, ha⟩
+    rw [ne_zero_iff]
+    simp only [Finset.mem_image, mem_support_iff, ne_eq] at ha
+    obtain ⟨d, hd⟩ := ha
+    use d
+    simp [g, coeff_sum, hd]
+  have hgd : ∀ a b, a ≠ b → Disjoint (orderTypes (g a)) (orderTypes (g b)) := by
+    intro a b hab
+    rw [(orderTypes_singleton_iff_isStronglyHomogeneous (hgz a)).mpr (hgsh a)]
+    rw [(orderTypes_singleton_iff_isStronglyHomogeneous (hgz b)).mpr (hgsh b)]
+    simpa
+  have hgi : ∀ a, g a ∈ symmSpan {p} := by
+    intro a
+    unfold g
+    refine Submodule.sum_mem _ ?_
+    simp only [Finset.mem_filter, and_imp]
+    intro d hd hda
+    suffices monomial d 1 ∈ Ideal.span (symmSet {p}) by
+      apply Submodule.smul_mem _ (C (coeff d p)) at this
+      simpa [C_mul_monomial] using this
+    obtain ⟨T, hT⟩ := hm
+    unfold symmSpan at hT
+    rw [hT]
+    have hpI : p ∈ symmSpan {p} := mem_symmSpan_self
+    rw [symmSpan, hT, mem_ideal_span_monomial_image] at hpI
+    simp [mem_ideal_span_monomial_image, hpI d hd]
+  have hgot : ∀ a, symmSpan {g a} = Ideal.span (orderTypeComponent α R a) := by
+    intro a
+    apply span_orderTypeComponent_le_symmSpan a.2 at hm
+    simp_rw [hgp] at hm
+    apply le_trans' symmSpan_sum_le_sup_symmSpan at hm
+    apply le_symmSpan_of_le_sup_symmSpan hgd at hm
+    · exact le_antisymm (symmSpan_le_span_orderTypeComponent <| hgsh a) hm
+    · rw [orderTypes_singleton_iff_isStronglyHomogeneous (hgz a)]
       exact hgsh a
-
-      rw [← orderTypes_singleton_iff_stronglyHomogeneous (hgz a)]
-      exact hgsh a
-      rw [← hmdp a]
-      exact hgh
-    have hgeo : ∀ a, eval_one (g a) ≠ 0 := by
-      intro a; specialize hgot a
-      contrapose! hgot
-      apply ne_of_lt
-      apply strict_subset_orderType (hgsh a) (hgz a) hgot
-    suffices S.card ≤ 1 by
-      rw [Nat.le_one_iff_eq_zero_or_eq_one] at this
-      rcases this with h0|h1
-      simp only [Finset.card_eq_zero, Finset.image_eq_empty, support_eq_empty, S] at h0
-      contradiction
-
-      rw [Finset.card_eq_one] at h1; unfold S at h1
-      obtain ⟨a, h1⟩ := h1; use a
-      rw [orderTypes_singleton_iff_stronglyHomogeneous hpz]
-      apply_fun SetLike.coe at h1
-      simp only [Finset.coe_image, Finset.coe_singleton] at h1
-      rw [← h1, orderTypes];
-      suffices {d | coeff d p ≠ 0} = p.support by rw [this]
-      ext d; rw [Set.mem_setOf];
-      simp only [ne_eq, Finset.mem_coe, mem_support_iff]
-
-    by_contra! hS
-    rw [← Fintype.card_coe, Fintype.one_lt_card_iff] at hS
-    obtain ⟨a, b, hab⟩ := hS
-    suffices ¬IsPrincipalSymmetric (symmSpan {p}) by apply this; use p
-    apply not_psi_of_nonzero_disjoint_orderTypes (singleDegGen_of_symmSpan hp) (hgh a) (hgh b) (hgeo a) (hgeo b)
-    exact hgd a b hab; exact hgi a; exact hgi b
+    · rwa [← hmdp a.1 a.2]
+  have hgeo : ∀ a, evalOne (g a) ≠ 0 := by
+    intro a
+    specialize hgot a
+    contrapose! hgot
+    exact (symmSpan_lt_span_orderTypeComponent (hgsh a) (hgz a) hgot).ne
+  suffices (orderTypes p).card ≤ 1 by
+    rw [Nat.le_one_iff_eq_zero_or_eq_one] at this
+    rcases this with h0 | h1
+    · simp [hp0] at h0
+    · obtain ⟨a, h1⟩ := Finset.card_eq_one.mp h1
+      use a
+      rwa [← orderTypes_singleton_iff_isStronglyHomogeneous hp0]
+  by_contra! hS
+  rw [← Fintype.card_coe, Fintype.one_lt_card_iff] at hS
+  obtain ⟨a, b, hab⟩ := hS
+  suffices ¬IsPrincipalSymmetric (symmSpan {p}) by apply this; use p
+  exact not_psi_of_nonzero_disjoint_orderTypes (isSingleDegGen_symmSpan hp) (hgh a) (hgh b) (hgeo a)
+    (hgeo b) (hgd a b hab) (hgi a) (hgi b)
 
 theorem monomial_iff_symmSpan_monomial (h : IsPrincipalSymmetric I) (hI : IsSingleDegGen I)
-  (hIB : I ≠ ⊥) : (∃ S : Set (α →₀ ℕ), I = Ideal.span ((fun d => monomial d (1 : F)) '' S)) ↔
-  ∃ d : α →₀ ℕ, I = symmSpan {monomial d (1 : F)} := by
-    constructor; intro hm
-    obtain ⟨p, hph, hp⟩ := psi_homo_gen_of_singleDegGen hI h
+    (hIB : I ≠ ⊥) : (∃ S : Set (α →₀ ℕ), I = Ideal.span ((fun d => monomial d (1 : R)) '' S)) ↔
+    ∃ d : α →₀ ℕ, I = symmSpan {monomial d (1 : R)} := by
+  constructor
+  · intro hm
+    obtain ⟨p, hph, hp⟩ := exists_homog_gen_of_psi_isSingleDegGen hI h
     rw [hp] at hm
-    apply stronglyHomogeneous_of_homogeneous hm (minDeg I) at hph
+    have hp0 : p ≠ 0 := by
+      contrapose! hIB
+      simp [hp, hIB]
+    apply isStronglyHomogeneous_of_monomial_ideal (minDeg I) hm at hph
     obtain ⟨a, hsh⟩ := hph
-    let hot := symmSpan_eq_span_orderTypeComponent hm hsh
-    rw [hp, hot]
-    apply exists_monomial_symmSpan_orderTypeComponent
-    use p; constructor; swap; exact hsh
-    contrapose! hIB
-    rw [hp, hIB, symmSpan_zero]
-
-    contrapose! hIB; rw [hp, hIB, symmSpan_zero]
-
-    intro hm
-    obtain ⟨d, hd⟩ := hm
-    use Set.range (fun σ : Equiv.Perm α => (Finsupp.mapDomain σ d))
-    rw [hd, symmSpan, symmSet]; congr
-    ext p; simp only [Set.image_singleton, symm_monomial, Set.iUnion_singleton_eq_range,
-      Set.mem_range, Set.mem_image, exists_exists_eq_and]
+    rw [hp, symmSpan_eq_span_orderTypeComponent hm hsh hp0]
+    obtain ⟨d, hd⟩ := exists_symmSpan_monomial_eq_span_orderTypeComponent hp0 hsh
+    use d
+    exact hd.symm
+  · intro ⟨d, hd⟩
+    use Set.range (fun σ : Perm α ↦ Finsupp.mapDomain σ d)
+    rw [hd, symmSpan, symmSet_singleton_eq_range]
+    congr
+    ext f
+    simp

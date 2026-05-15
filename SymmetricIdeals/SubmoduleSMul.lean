@@ -1,154 +1,74 @@
+/-
+Copyright (c) 2026 Noah Walker. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Noah Walker
+-/
+
 import Mathlib
 import SymmetricIdeals.MinDeg
 import SymmetricIdeals.SingleDegGen
 import SymmetricIdeals.Basic
 import SymmetricIdeals.Products.kSymmetric
+import SymmetricIdeals.Upstream
 
 variable {R S : Type*} [Semiring R] [Semiring S] [Module R S] [SMulCommClass R S S]
 
-noncomputable
-def pmul (p : S) (M : Submodule R S) := Submodule.span R ((p * ·) '' M)
+abbrev pmul (p : S) (M : Submodule R S) := Submodule.map (LinearMap.mulLeft R p) M
 
 variable {p q : S} {M : Submodule R S}
 
-omit [SMulCommClass R S S] in
 lemma mem_pmul_of_mul_mem (p q) (hq : q ∈ M) : p * q ∈ pmul p M := by
-  apply Submodule.subset_span
-  simp only [Set.mem_image, SetLike.mem_coe]
+  rw [Submodule.mem_map]
   use q
+  simp [hq]
 
 
-lemma pmul_eq : pmul p M = (p * ·) '' M := by
-    ext x
-    simp only [pmul, SetLike.mem_coe, Set.mem_image]
-    constructor
-    · intro h
-      rw [Submodule.mem_span_image_iff_exists_fun] at h
-      obtain ⟨T, hT, ⟨c, hc⟩⟩ := h
-      use (∑ i, c i • i)
-      constructor
-      · refine Submodule.sum_mem _ ?_
-        intro i hi
-        exact Submodule.smul_mem _ _ <| hT <| Subtype.coe_prop _
-      · rw [← hc, Finset.mul_sum]
-        refine Finset.sum_congr rfl ?_
-        intro i hi
-        rw [mul_smul_comm]
-    · intro ⟨y, hy, h⟩
-      rw [← h]
-      exact mem_pmul_of_mul_mem p y hy
-
-@[simp]
-lemma pmul_zero : pmul 0 M = 0 := by
-  rw [Submodule.zero_eq_bot, Submodule.eq_bot_iff]
-  intro x
-  rw [← SetLike.mem_coe, pmul_eq, Set.mem_image]
-  intro ⟨y, hy, hyx⟩
-  rw [← hyx, zero_mul]
-
-@[simp]
-lemma pmul_bot : pmul p (⊥ : Submodule R S) = 0 := by
-  rw [Submodule.zero_eq_bot, Submodule.eq_bot_iff]
-  intro x
-  rw [← SetLike.mem_coe, pmul_eq, Set.mem_image]
-  grind [Submodule.bot_coe]
-
-
-lemma pmul_bij [IsDomain S] (p : S) (M : Submodule R S) (hp : p ≠ 0) :
-    Function.Bijective ((fun q => ⟨p * q, mem_pmul_of_mul_mem _ _ q.2⟩) : M → (pmul p M)) := by
+lemma pmul_bij [IsDomain S] (p) (hp : p ≠ 0) : Function.Bijective
+    (fun q ↦ ⟨LinearMap.mulLeft R p q, Submodule.apply_coe_mem_map _ q⟩ : M → pmul p M) := by
   constructor
-  · intro m n hnm
-    simpa [hp] using hnm
-  · intro q
-    simp only [Subtype.exists]
-    have hq : q.1 ∈ (p * ·) '' M := by simp [← pmul_eq]
-    rw [Set.mem_image] at hq
-    obtain ⟨a, ha, hq⟩ := hq
-    use a, ha
-    simp [hq]
+  · intro x y hxy
+    simpa [hp] using hxy
+  · intro ⟨q, hq⟩
+    simpa using hq
+
+lemma pmul_restrict_bij [IsDomain S] (p : S) (hp : p ≠ 0) : Function.Bijective
+    ((LinearMap.mulLeft R p).restrict (fun _ ↦ Submodule.mem_map_of_mem (p := M))) := by
+  convert (pmul_bij p hp)
 
 noncomputable
-def pmul_linear_map (p : S) (M : Submodule R S) :
-  M →ₗ[R] (pmul p M) := ⟨⟨fun q => ⟨p * q, mem_pmul_of_mul_mem _ _ q.2⟩, by simp [mul_add]⟩,
-    by simp [mul_smul_comm]⟩
+def pmulEquiv [IsDomain S] (p : S) (M : Submodule R S) (hp : p ≠ 0) :
+    M ≃ₗ[R] (pmul p M) := LinearEquiv.ofBijective _ (pmul_restrict_bij p hp)
 
-noncomputable
-def pmul_equiv [IsDomain S] (p : S) (M : Submodule R S) (hp : p ≠ 0) :
-  M ≃ₗ[R] (pmul p M) := LinearEquiv.ofBijective (pmul_linear_map p M) (pmul_bij p M hp)
-
-lemma rank_eq_pmul_rank [IsDomain S] (p : S) {M : Submodule R S} (hp : p ≠ 0) :
-  Module.finrank R M = Module.finrank R (pmul p M) := LinearEquiv.finrank_eq (pmul_equiv p M hp)
+lemma rank_eq_pmul_rank [IsDomain S] (p) (hp : p ≠ 0) :
+  Module.finrank R M = Module.finrank R (pmul p M) := LinearEquiv.finrank_eq (pmulEquiv p M hp)
 
 
-lemma dvd_of_mem_pmul {p q : S} (M : Submodule R S)
-    (h : q ∈ pmul p M) : p ∣ q := by
-  unfold pmul at h
-  rw [Submodule.mem_span_iff_exists_finset_subset] at h
-  obtain ⟨f, T, hT, hf, hq⟩ := h
-  rw [← hq]
-  refine Finset.dvd_sum ?_
-  intro t ht
-  apply hT at ht
-  simp only [Set.mem_image, SetLike.mem_coe] at ht
-  obtain ⟨x, hx, ht⟩ := ht
-  have hpt : p ∣ t := by
-    use x
-    exact ht.symm
-  exact dvd_smul_of_dvd _ hpt
+lemma dvd_of_mem_pmul (h : q ∈ pmul p M) : p ∣ q := by
+  simp only [Submodule.mem_map, LinearMap.mulLeft_apply] at h
+  obtain ⟨r, hr, h⟩ := h
+  use r
+  exact h.symm
 
--- TODO: can this be done better
---  at the very least, one direction should be trivial since pmul p is a linear map
-lemma pmul_span {p : S} {s : Set S} :
-    pmul p (Submodule.span R s) = Submodule.span R ((p * ·) '' s) := by
-  ext q
-  constructor
-  · intro hq
-    have hq : q ∈ (p * ·) '' (Submodule.span R s) := by simpa [← pmul_eq]
-    rw [Set.mem_image] at hq
-    obtain ⟨r, hr, hq⟩ := hq
-    rw [SetLike.mem_coe, Submodule.mem_span_iff_exists_finset_subset] at hr
-    obtain ⟨f, T, hT, hf, hr⟩ := hr
-    rw [← hq, ← hr, Finset.mul_sum]
-    refine Submodule.sum_mem _ ?_
-    intro t ht
-    apply hT at ht
-    rw [mul_smul_comm]
-    refine Submodule.smul_mem _ _ <| Submodule.mem_span_of_mem ?_
-    rw [Set.mem_image]
-    use t
-  intro hq
-  rw [Submodule.mem_span_image_iff_exists_fun] at hq
-  obtain ⟨T, hT, f, hq⟩ := hq
-  rw [← SetLike.mem_coe, pmul_eq, Set.mem_image]
-  use ∑ i, f i • i
-  constructor
-  · rw [SetLike.mem_coe]
-    refine Submodule.sum_mem _ ?_
-    intro i hi
-    exact Submodule.smul_mem _ _ <| Submodule.mem_span_of_mem <| hT i.2
-  · simp [← hq, Finset.mul_sum, mul_smul_comm]
-
-lemma pmul_inf [IsDomain S] {p : S} {M N : Submodule R S} :
+lemma pmul_inf [IsDomain S] {N : Submodule R S} :
     pmul p (M ⊓ N) = (pmul p M) ⊓ (pmul p N) := by
   by_cases hp0 : p = 0
-  · simp [hp0]
-  ext q
-  simp [← SetLike.mem_coe, pmul_eq, Submodule.coe_inf, Set.mem_image, Set.mem_inter_iff]
-  grind [mul_right_inj' hp0]
+  · simp [pmul, hp0]
+  rw [pmul, Submodule.map_inf]
+  intro x y
+  simp [hp0]
 
-variable {R S : Type*} [Semiring R] [CommSemiring S] [Module R S]
+variable {S : Type*} [CommSemiring S] {I J : Ideal S} {p : S}
 
-lemma pmul_eq_span_mul {p : S} {I : Ideal S} :
-    pmul p I = Ideal.span {p} * I := by
-  conv => rhs; rw [← Ideal.span_eq I, Ideal.span_mul_span, Set.singleton_mul, Ideal.span,
-    ← pmul_span, ← Ideal.span, Ideal.span_eq]
+lemma pmul_eq_span_mul : pmul p I = Ideal.span {p} * I := by
+  rw [pmul, ← Submodule.top_smul I, smul_eq_mul, mul_comm ⊤, ← smul_eq_mul,
+    Submodule.map_smul'' I ⊤ _]
+  simp [LinearMap.mulLeft_range, mul_comm]
 
-lemma pmul_mul {p : S} {I J : Ideal S} : pmul p (I * J) = (pmul p I) * J := by
+lemma pmul_mul : pmul p (I * J) = (pmul p I) * J := by
   rw [pmul_eq_span_mul, pmul_eq_span_mul, mul_assoc]
 
-lemma pmul_mul' {p : S} {I J : Ideal S} : pmul p (I * J) = I * (pmul p J) := by
+lemma pmul_mul' : pmul p (I * J) = I * (pmul p J) := by
   rw [mul_comm, pmul_mul, mul_comm]
-
 
 
 section MvPolynomial
@@ -161,11 +81,9 @@ lemma symmSpan_eq_pmul_symmSpan {p q r : MvPolynomial α R} (h : p = q * r) (hq 
     symmSpan {p} = pmul q (symmSpan {r}) := by
   rw [pmul_eq_span_mul, ← symmSpan_eq_span_of_kSymmetric hq, mul_symmSpan_of_kSymmetric hq, h]
 
-
 lemma pmul_restrictScalars {p : MvPolynomial α R} {I : Ideal (MvPolynomial α R)} :
     pmul p (Submodule.restrictScalars R I) = Submodule.restrictScalars R (pmul p I) := by
-  ext q
-  simp only [← SetLike.mem_coe, pmul_eq, Submodule.coe_restrictScalars, Set.mem_image]
+  simp [pmul, Submodule.restrictScalars_map, LinearMap.restrictScalars_mulLeft]
 
 lemma pmul_perm_le_symmSpan_mul {p : MvPolynomial α R} {σ : Equiv.Perm α}
     {J : Ideal (MvPolynomial α R)} : pmul (σ • p) J ≤ symmSpan {p} * J := by
@@ -187,14 +105,14 @@ lemma minDeg_pmul_perm_eq_minDeg_symmSpan {p : MvPolynomial α R} (σ : Equiv.Pe
   by_cases! hJB : J = ⊥
   · simp [hJB]
   by_cases! hp0 : p = 0
-  · simp [hp0]
+  · simp [hp0, pmul]
   have hσ : {σ • p} ⊆ SetLike.coe (homogeneousSubmodule α R n) := by
     simp [perm_isHomogeneous σ hp]
   rw [pmul_eq_span_mul, minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB,
     minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB, minDeg_symmSpan hp hp0, Nat.add_right_cancel_iff]
   · exact minDeg_homog (by simp [smul_ne_zero_iff_ne, hp0]) hσ
   · exact isSingleDegGen_symmSpan hp
-  · rwa [ne_eq, symmSpan_bot_iff]
+  · rwa [ne_eq, symmSpan_eq_bot_iff]
   · rw [isSingleDegGen_iff]
     use n, {σ • p}
   · simp [smul_ne_zero_iff_ne, hp0]
