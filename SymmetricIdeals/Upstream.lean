@@ -25,24 +25,24 @@ lemma rename_homogeneousComponent {α R ι : Type*} [CommSemiring R] {φ : α �
     grind [Finsupp.degree_mapDomain]
   · simp [coeff_rename_mapDomain _ h]
 
+
 lemma Ideal.map_eq_image_of_surjective {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
     (f : F) [RingHomClass F R S] (hf : Function.Surjective ⇑f) {I : Ideal R} :
     Ideal.map f I = ⇑f '' ↑I := by
   ext y
   simp [Ideal.mem_map_iff_of_surjective f hf]
 
-lemma homogeneousSubmodule_fg {α R : Type*} [Finite α] [CommSemiring R] (n : ℕ) :
-    (homogeneousSubmodule α R n).FG := by
+
+lemma Finsupp.finite_of_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
+    {f : σ →₀ ℕ | f.degree = n}.Finite :=
+  Set.Finite.subset (finite_of_degree_le n) (by grind)
+
+lemma homogeneousSubmodule_fg {σ R : Type*} [Finite σ] [CommSemiring R] (n : ℕ) :
+    (homogeneousSubmodule σ R n).FG := by
   rw [homogeneousSubmodule_eq_finsupp_supported, ← Module.Finite.iff_fg]
-  suffices Finite {d : α →₀ ℕ | d.degree = n} by
-    exact Module.Finite.of_basis (basisRestrictSupport R {d | d.degree = n})
-  have : Finite {d : α →₀ ℕ | ∀ a, d a ≤ n} :=
-    ((Set.Finite.pi' fun _ ↦ Set.finite_le_nat _).preimage DFunLike.coe_injective.injOn).to_subtype
-  apply Finite.Set.subset {d : α →₀ ℕ | ∀ a, d a ≤ n}
-  rw [Set.setOf_subset_setOf]
-  intro d hd a
-  rw [← hd]
-  exact Finsupp.le_degree a d
+  have := (Finsupp.finite_of_degree_eq (σ := σ) n).to_subtype
+  exact Module.Finite.of_basis (basisRestrictSupport R {d | d.degree = n})
+
 
 attribute [local instance] MvPolynomial.gradedAlgebra
 
@@ -73,11 +73,15 @@ lemma weightedHomogeneousComponent_mem_of_mem {α R M : Type*} [CommSemiring R]
   (mem_iff_weightedHomogeneousComponent_mem w h).mp hf m
 
 
+lemma homogeneousComponent_eq_self {α R : Type*} [CommSemiring R] {f : MvPolynomial α R} {n : ℕ}
+    (hf : f.IsHomogeneous n) : homogeneousComponent n f = f := by
+  simp [homogeneousComponent_of_mem hf]
 
 lemma isHomogeneous_zero_of_isEmpty {α R : Type*} [CommSemiring R] [IsEmpty α]
     (f : MvPolynomial α R) : f.IsHomogeneous 0 := by
   rw [eq_C_of_isEmpty f]
   exact isHomogeneous_C α (coeff 0 f)
+
 
 
 

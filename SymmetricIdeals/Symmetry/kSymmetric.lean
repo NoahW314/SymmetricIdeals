@@ -5,7 +5,7 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.Basic
+import SymmetricIdeals.Symmetry.Basic
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 

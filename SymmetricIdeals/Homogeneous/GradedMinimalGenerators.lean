@@ -5,9 +5,9 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.MinDeg
-import SymmetricIdeals.SingleDegGen
-import SymmetricIdeals.MinimalGenerating
+import SymmetricIdeals.Homogeneous.MinDeg
+import SymmetricIdeals.Homogeneous.SingleDegGen
+import SymmetricIdeals.Homogeneous.MinimalGenerators
 import SymmetricIdeals.Upstream
 
 

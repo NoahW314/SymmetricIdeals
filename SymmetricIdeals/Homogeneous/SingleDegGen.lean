@@ -5,8 +5,10 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.MinDeg
-import SymmetricIdeals.Basic
+import SymmetricIdeals.Homogeneous.Basic
+import SymmetricIdeals.Homogeneous.MinDeg
+import SymmetricIdeals.Homogeneous.Degree
+import SymmetricIdeals.Symmetry.Basic
 import SymmetricIdeals.Upstream
 
 open MvPolynomial Rename
@@ -16,9 +18,6 @@ variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 attribute [local instance] MvPolynomial.gradedAlgebra
 
 open scoped Pointwise
-
--- TODO: Some of these things really don't belong in SingleDegGen.
---  More generally, see if the structure of all files can be improved.
 
 noncomputable
 def IsSingleDegGen (I : Ideal (MvPolynomial α R)) :=
@@ -67,16 +66,10 @@ theorem isSingleDegGen_iff' : IsSingleDegGen I ↔ ∃ S : Set (MvPolynomial α 
     rw [isSingleDegGen_iff]
     use minDeg I
 
-theorem isSingleDegGen_symmSpan {p : MvPolynomial α R} {n : ℕ} (h : p.IsHomogeneous n) :
-    IsSingleDegGen (symmSpan {p}) := by
-  rw [isSingleDegGen_iff]
-  use n, symmSet {p}
-  simp [symmSet_subset_homogSub_of_isHomogeneous h]
 
 @[simp]
 lemma top_singleDegGen : IsSingleDegGen (⊤ : Ideal (MvPolynomial α R)) := by
-  rw [← symmSpan_one]
-  exact isSingleDegGen_symmSpan <| isHomogeneous_one α R
+  simp [IsSingleDegGen, Submodule.one_eq_span]
 
 theorem isHomogeneous_of_isSingleDegGen (h : IsSingleDegGen I) :
     Ideal.IsHomogeneous (homogeneousSubmodule α R) I := by
@@ -139,79 +132,9 @@ theorem homogSubI_span_eq {n : ℕ} {S : Set (MvPolynomial α R)} {f : ℕ → S
       rw [isSingleDegGen_iff]
       use i, f i
 
-lemma isSymmetric_homogeneousSubmodule {n : ℕ} :
-    IsSymmetric (SetLike.coe (homogeneousSubmodule α R n)) := by
-  intro σ f
-  rw [SetLike.mem_coe, mem_homogeneousSubmodule]
-  exact perm_isHomogeneous σ
-
-lemma minDeg_symmSpan {f : MvPolynomial α R} {n : ℕ} (h : f.IsHomogeneous n) (h0 : f ≠ 0) :
-    minDeg (symmSpan {f}) = n := by
-  refine minDeg_homog ?_ ?_
-  · use f
-    simp only [mem_symmSet_singleton_self, ne_eq, h0, not_false_eq_true, and_self]
-  · rw [← Set.le_iff_subset, symmSet_le_iff isSymmetric_homogeneousSubmodule]
-    simp [h]
-
-
-noncomputable
-def minDegree (f : MvPolynomial α R) : ℕ := sInf {n | homogeneousComponent n f ≠ 0}
-
-@[simp]
-lemma minDegree_zero : minDegree (0 : MvPolynomial α R) = 0 := by simp [minDegree]
-
-lemma homogeneousComponent_minDegree_ne_zero {f : MvPolynomial α R} (h : f ≠ 0) :
-    homogeneousComponent (minDegree f) f ≠ 0 := by
-  change (minDegree f ∈ {n | homogeneousComponent n f ≠ 0})
-  refine Nat.sInf_mem ?_
-  rw [← sum_homogeneousComponent f] at h
-  apply Finset.exists_ne_zero_of_sum_ne_zero at h
-  obtain ⟨n, _, hn⟩ := h
-  use n
-  simp [hn]
-
-lemma minDegree_le_of_homogeneousComponent_ne_zero {n : ℕ} {f : MvPolynomial α R}
-    (h : homogeneousComponent n f ≠ 0) : minDegree f ≤ n := by
-  refine Nat.sInf_le ?_
-  simp [h]
-
-lemma minDegree_of_isHomogeneous {n : ℕ} {f : MvPolynomial α R} (h : f.IsHomogeneous n)
-    (h0 : f ≠ 0) : minDegree f = n := by
-  simp [minDegree, homogeneousComponent_of_mem h, h0]
-
-lemma minDegree_perm {f : MvPolynomial α R} {σ : Equiv.Perm α} :
-    minDegree (σ • f) = minDegree f := by
-  simp [minDegree, ← symmAct_homogeneousComponent, smul_eq_zero_iff_eq]
-
-
-@[simp]
-lemma minDegree_eq_zero_of_isEmpty [IsEmpty α] (f : MvPolynomial α R) :
-    minDegree f = 0 := by
-  by_cases! h0 : f = 0
-  · simp [h0]
-  exact minDegree_of_isHomogeneous (isHomogeneous_zero_of_isEmpty f) h0
-
-theorem span_union_homogeneousComponent_image {S : Set (MvPolynomial α R)} (h : I = Ideal.span S)
-    (hI : I.IsHomogeneous (homogeneousSubmodule α R)) :
-    I = Ideal.span (⋃ n, homogeneousComponent n '' S) := by
-  subst h
-  refine Submodule.span_eq_span ?_ ?_
-  · intro f hf
-    rw [← sum_homogeneousComponent f]
-    refine Submodule.sum_mem _ ?_
-    intro n _
-    refine Submodule.mem_span_of_mem ?_
-    rw [Set.mem_iUnion]
-    use n, f
-  · intro f
-    simp only [Set.mem_iUnion, Set.mem_image, SetLike.mem_coe, forall_exists_index, and_imp]
-    intro n g hg hf
-    subst hf
-    exact homogeneousComponent_mem_of_mem hI (Submodule.mem_span_of_mem hg) n
-
 theorem minDeg_homog' {S : Set (MvPolynomial α R)}
     (h : ∀ f ∈ S, ∃ n : ℕ, f.IsHomogeneous n) (h0 : 0 ∉ S) :
-    minDeg (Ideal.span S) = sInf (minDegree '' S) := by
+    minDeg (Ideal.span S) = sInf (lowestDegree '' S) := by
   have hI : (Ideal.span S).IsHomogeneous (homogeneousSubmodule α R) := Ideal.homogeneous_span _ _ h
   by_cases! hb : Ideal.span S = ⊥
   · simp at hb
@@ -221,8 +144,8 @@ theorem minDeg_homog' {S : Set (MvPolynomial α R)}
   · refine Nat.sInf_le ?_
     simp only [ne_eq, Submodule.eq_bot_iff, Submodule.mem_inf, mem_homogeneousSubmodule,
       Submodule.restrictScalars_mem, and_imp, not_forall, exists_prop, Set.mem_setOf_eq]
-    obtain ⟨g, hgS, hg⟩ : ∃ g ∈ S, minDegree g = sInf (minDegree '' S) := by
-      change sInf (minDegree '' S) ∈ minDegree '' S
+    obtain ⟨g, hgS, hg⟩ : ∃ g ∈ S, lowestDegree g = sInf (lowestDegree '' S) := by
+      change sInf (lowestDegree '' S) ∈ lowestDegree '' S
       refine Nat.sInf_mem ?_
       rw [Set.image_nonempty]
       contrapose! hb
@@ -232,7 +155,7 @@ theorem minDeg_homog' {S : Set (MvPolynomial α R)}
     constructor
     · rw [← hg]
       obtain ⟨n, hn⟩ := h g hgS
-      rwa [minDegree_of_isHomogeneous hn hg0]
+      rwa [lowestDegree_of_isHomogeneous hn hg0]
     constructor
     · exact Submodule.mem_span_of_mem hgS
     · exact hg0
@@ -249,7 +172,7 @@ theorem minDeg_homog' {S : Set (MvPolynomial α R)}
     · refine Nat.sInf_le ?_
       rw [Set.mem_image]
       use g
-      simp [hgt, minDegree_of_isHomogeneous hn (by grind)]
+      simp [hgt, lowestDegree_of_isHomogeneous hn (by grind)]
     · simp only [smul_eq_mul, homogeneousComponent_mul, ne_eq] at hg
       apply Finset.exists_ne_zero_of_sum_ne_zero at hg
       obtain ⟨k, hk, hg⟩ := hg
@@ -257,59 +180,6 @@ theorem minDeg_homog' {S : Set (MvPolynomial α R)}
       simp only [Finset.mem_antidiagonal, hg.1] at hk
       rw [← hk]
       exact Nat.le_add_left n k.1
-
-lemma minDeg_homogeneousSubmodule [Nonempty α]
-    {R : Type*} [CommRing R] [Nontrivial R] [IsReduced R] {n : ℕ} :
-    minDeg (Ideal.span (SetLike.coe (homogeneousSubmodule α R n))) = n := by
-  refine minDeg_homog ?_ (by rfl)
-  inhabit α
-  use (X default) ^ n
-  simp [isHomogeneous_X_pow default n]
-
-lemma mem_span_homogeneousSubmodule {n m : ℕ} {f : MvPolynomial α R} (h : f.IsHomogeneous n)
-    (hnm : n ≥ m) : f ∈ Ideal.span (homogeneousSubmodule α R m) := by
-  rw [as_sum f]
-  refine Ideal.sum_mem _ ?_
-  intro c hc
-  apply IsHomogeneous.degree_eq_sum_deg_support h at hc
-  rw [hc] at hnm
-  obtain ⟨d, hdc, hdm⟩ := Finsupp.exists_le_degree_eq _ _ hnm
-  obtain ⟨e, he⟩ := exists_add_of_le hdc
-  rw [← one_mul (coeff c f), he, ← monomial_mul]
-  refine Ideal.mul_mem_right _ _ ?_
-  refine Submodule.mem_span_of_mem ?_
-  simp [isHomogeneous_monomial _ hdm]
-
-lemma minDegree_gen_eq {f : MvPolynomial α R} (h : I = symmSpan {f})
-    (hI : I.IsHomogeneous (homogeneousSubmodule α R)) : minDeg I = minDegree f := by
-  by_cases! hf0 : f = 0
-  · simp_all
-  rw [span_union_homogeneousComponent_image h hI, ← Ideal.span_sdiff_singleton_zero, minDeg_homog']
-  · have hf : minDegree f ∈ minDegree '' ((⋃ n, homogeneousComponent n '' symmSet {f}) \ {0}) := by
-      simp only [Set.mem_image, Set.mem_diff, Set.mem_iUnion, mem_symmSet_singleton,
-        exists_exists_eq_and, Set.mem_singleton_iff, ne_eq, ↓existsAndEq, true_and]
-      use (minDegree f), 1
-      simp only [one_smul, homogeneousComponent_minDegree_ne_zero hf0, not_false_eq_true, true_and]
-      rw [minDegree_of_isHomogeneous (homogeneousComponent_isHomogeneous _ _)]
-      exact homogeneousComponent_minDegree_ne_zero hf0
-    refine le_antisymm (Nat.sInf_le hf) ?_
-    refine le_csInf ?_ ?_
-    · use minDegree f
-    · simp only [Set.mem_image, Set.mem_diff, Set.mem_iUnion, mem_symmSet_singleton,
-        exists_exists_eq_and, Set.mem_singleton_iff, ne_eq, ↓existsAndEq, true_and,
-        forall_exists_index, and_imp]
-      intro n m σ hhc hm
-      subst hm
-      rw [minDegree_of_isHomogeneous (homogeneousComponent_isHomogeneous _ _) hhc]
-      apply minDegree_le_of_homogeneousComponent_ne_zero at hhc
-      rwa [minDegree_perm] at hhc
-  · simp only [Set.mem_diff, Set.mem_iUnion, Set.mem_image, mem_symmSet_singleton,
-      exists_exists_eq_and, Set.mem_singleton_iff, ne_eq, and_imp, forall_exists_index]
-    intro g n σ hg hg0
-    subst hg
-    use n
-    exact homogeneousComponent_isHomogeneous n (σ • f)
-  · simp
 
 theorem homogComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α R)}
     {S : Set (MvPolynomial α R)} (h : IsSingleDegGen I) (hspan : I = Ideal.span S) :
@@ -345,76 +215,6 @@ theorem homogComps_gen_singleDegGen_ideal_finset [DecidableEq (MvPolynomial α R
   simp only [Finset.coe_image]
   exact homogComps_gen_singleDegGen_ideal h hspan
 
-lemma exists_homog_eq_symmSpan_of_isPSI (hI : IsSingleDegGen I) (h : IsPrincipalSymmetric I) :
-    ∃ f, f.IsHomogeneous (minDeg I) ∧ I = symmSpan {f} := by
-  have h' := h
-  obtain ⟨f, h⟩ := h
-  by_cases! hf0 : f = 0
-  · use 0
-    simp [hf0, h, isHomogeneous_zero]
-  use homogeneousComponent (minDeg I) f
-  constructor
-  · exact homogeneousComponent_isHomogeneous _ _
-  refine le_antisymm ?_ ?_
-  · nth_rw 1 [hI, isSingleDegGen_symmSpan (homogeneousComponent_isHomogeneous _ f)]
-    refine Ideal.span_mono ?_
-    refine le_trans (homogComps_gen_singleDegGen_ideal hI h) ?_
-    suffices minDeg I = minDeg (symmSpan {(homogeneousComponent (minDeg I)) f}) by
-      refine le_of_eq ?_
-      rw [← this]
-      congr
-      ext g
-      simp [mem_symmSet_singleton]
-    rw [minDeg_symmSpan (homogeneousComponent_isHomogeneous _ _ )]
-    rw [minDegree_gen_eq h (isHomogeneous_of_isSingleDegGen hI)]
-    exact homogeneousComponent_minDegree_ne_zero hf0
-  · rw [symmSpan_singleton_le_iff_mem (isSymmetric_of_isPSI h')]
-    refine homogeneousComponent_mem_of_mem (isHomogeneous_of_isSingleDegGen hI) ?_ _
-    simp [h]
-
-lemma exists_homog_gen_of_psi_isSingleDegGen (hI : IsSingleDegGen I) (h : IsPrincipalSymmetric I) :
-    ∃ f, f.IsHomogeneous (minDeg I) ∧ I = symmSpan {f} := by
-  have h' := h
-  obtain ⟨f, h⟩ := h
-  by_cases hb : I = ⊥
-  · use 0
-    simp [isHomogeneous_zero, hb]
-  · apply minDeg_mem' at hb
-    specialize hb (isHomogeneous_of_isSingleDegGen hI)
-    rw [Set.mem_setOf] at hb
-    use (homogeneousComponent (minDeg I) f)
-    constructor
-    · exact homogeneousComponent_isHomogeneous (minDeg I) f
-    have hssI : symmSpan {homogeneousComponent (minDeg I) f} ≤ I := by
-      rw [symmSpan_singleton_le_iff_mem (isSymmetric_of_isPSI h')]
-      refine homogeneousComponent_mem_of_mem (isHomogeneous_of_isSingleDegGen hI) ?_ _
-      simp [h]
-    suffices homogeneousSubmoduleI (minDeg I) I =
-        homogeneousSubmoduleI (minDeg I) (symmSpan {(homogeneousComponent (minDeg I)) f}) by
-      apply eq_of_homogSubI_eq hI
-        <| isSingleDegGen_symmSpan (homogeneousComponent_isHomogeneous (minDeg I) f)
-      rw [this]
-      congr 1
-      have hfz : homogeneousComponent (minDeg I) f ≠ 0 := by
-        contrapose! hb
-        rw [this, hb, symmSpan_zero, ← Submodule.zero_eq_bot]
-        simp [Submodule.zero_eq_bot]
-      rw [symmSpan, minDeg_homog]
-      · use homogeneousComponent (minDeg I) f
-        simp only [mem_symmSet_singleton_self, ne_eq, hfz, not_false_eq_true, and_true]
-      · exact symmSet_subset_homogSub_of_isHomogeneous
-          (homogeneousComponent_isHomogeneous (minDeg I) f)
-    suffices homogeneousSubmoduleI (minDeg I) I ≥ homogeneousSubmoduleI (minDeg I)
-        (symmSpan {(homogeneousComponent (minDeg I)) f}) by
-      apply antisymm this
-      suffices ⇑(homogeneousComponent (minDeg I)) '' symmSet {f} =
-          symmSet {(homogeneousComponent (minDeg I)) f} by
-        rw [symmSpan, ← this]
-        exact homogComps_gen_singleDegGen_ideal hI h
-      ext p
-      simp only [Set.mem_image, mem_symmSet_singleton, exists_exists_eq_and,
-        symmAct_homogeneousComponent]
-    apply homogSubI_monotone (minDeg I) hssI
 
 theorem isSingleDegGen_iff_exists_finset [Finite α]
     {R : Type*} [CommRing R] [IsNoetherianRing R] {I : Ideal (MvPolynomial α R)} :

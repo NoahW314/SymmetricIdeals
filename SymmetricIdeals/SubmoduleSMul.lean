@@ -5,10 +5,8 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.MinDeg
-import SymmetricIdeals.SingleDegGen
-import SymmetricIdeals.Basic
-import SymmetricIdeals.Products.kSymmetric
+import SymmetricIdeals.Symmetry.Basic
+import SymmetricIdeals.Symmetry.kSymmetric
 import SymmetricIdeals.Upstream
 
 variable {R S : Type*} [Semiring R] [Semiring S] [Module R S] [SMulCommClass R S S]
@@ -94,43 +92,5 @@ lemma pmul_le_symmSpan_mul {p : MvPolynomial α R} {J : Ideal (MvPolynomial α R
     pmul p J ≤ symmSpan {p} * J := by
   nth_rw 1 [← one_smul (Equiv.Perm α) p]
   exact pmul_perm_le_symmSpan_mul
-
-variable [NoZeroDivisors R]
-
--- It suffices to have J.IsHomogeneous by using the fact that minDeg_mul works with just
---   homogeneous ideals.  Currently, that lemma is in the MinGens project.
-lemma minDeg_pmul_perm_eq_minDeg_symmSpan {p : MvPolynomial α R} (σ : Equiv.Perm α) {n : ℕ}
-    {J : Ideal (MvPolynomial α R)} (hJ : IsSingleDegGen J) (hp : p.IsHomogeneous n) :
-    minDeg (pmul (σ • p) J) = minDeg (symmSpan {p} * J) := by
-  by_cases! hJB : J = ⊥
-  · simp [hJB]
-  by_cases! hp0 : p = 0
-  · simp [hp0, pmul]
-  have hσ : {σ • p} ⊆ SetLike.coe (homogeneousSubmodule α R n) := by
-    simp [perm_isHomogeneous σ hp]
-  rw [pmul_eq_span_mul, minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB,
-    minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB, minDeg_symmSpan hp hp0, Nat.add_right_cancel_iff]
-  · exact minDeg_homog (by simp [smul_ne_zero_iff_ne, hp0]) hσ
-  · exact isSingleDegGen_symmSpan hp
-  · rwa [ne_eq, symmSpan_eq_bot_iff]
-  · rw [isSingleDegGen_iff]
-    use n, {σ • p}
-  · simp [smul_ne_zero_iff_ne, hp0]
-
-lemma minDeg_pmul_eq_minDeg_symmSpan {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPolynomial α R)}
-    (hJ : IsSingleDegGen J) (hp : p.IsHomogeneous n) :
-    minDeg (pmul p J) = minDeg (symmSpan {p} * J) := by
-  have h := minDeg_pmul_perm_eq_minDeg_symmSpan 1 hJ hp
-  rwa [one_smul] at h
-
-lemma minDeg_pmul {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPolynomial α R)}
-    (hJ : IsSingleDegGen J) (hp : p.IsHomogeneous n) (hJB : J ≠ ⊥) (hp0 : p ≠ 0) :
-    minDeg (pmul p J) = n + minDeg J := by
-  have hp : ({p} : Set (MvPolynomial α R)) ⊆ (homogeneousSubmodule α R n) := by simp [hp]
-  rw [pmul_eq_span_mul, minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB, minDeg_homog ?_ hp]
-  · simp [hp0]
-  · rw [isSingleDegGen_iff]
-    use n, {p}
-  · simp [hp0]
 
 end MvPolynomial

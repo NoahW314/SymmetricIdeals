@@ -5,8 +5,8 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.Products.ProductMgs
-import SymmetricIdeals.PsiObstructions
+import SymmetricIdeals.Product.ProductMgs
+import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
 
 /-!
 

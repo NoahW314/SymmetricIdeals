@@ -5,7 +5,7 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.PsiObstructions
+import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 attribute [local instance] MvPolynomial.gradedAlgebra

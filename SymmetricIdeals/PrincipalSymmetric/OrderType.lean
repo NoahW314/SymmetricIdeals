@@ -5,9 +5,9 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.Basic
-import SymmetricIdeals.MinimalGenerating
-import SymmetricIdeals.SingleDegGen
+import SymmetricIdeals.Symmetry.Basic
+import SymmetricIdeals.Homogeneous.MinimalGenerators
+import SymmetricIdeals.Homogeneous.SingleDegGen
 
 open MvPolynomial Equiv Rename
 

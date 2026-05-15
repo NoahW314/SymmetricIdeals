@@ -5,9 +5,10 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.GradedMinimalGenerators
-import SymmetricIdeals.Basic
-import SymmetricIdeals.OrderType
+import SymmetricIdeals.Homogeneous.GradedMinimalGenerators
+import SymmetricIdeals.Symmetry.Basic
+import SymmetricIdeals.Symmetry.Homogeneous
+import SymmetricIdeals.PrincipalSymmetric.OrderType
 
 open MvPolynomial Rename Equiv
 

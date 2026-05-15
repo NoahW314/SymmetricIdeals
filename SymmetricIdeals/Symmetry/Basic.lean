@@ -186,6 +186,12 @@ lemma symmSpan_le_iff_le {I : Ideal (MvPolynomial α R)}
     (h : IsSymmetric (SetLike.coe I)) : symmSpan S ≤ I ↔ S ≤ I := by
   rw [← symmSet_le_iff h, Ideal.span_le, Set.le_iff_subset]
 
+lemma isSymmetric_homogeneousSubmodule {n : ℕ} :
+    IsSymmetric (SetLike.coe (homogeneousSubmodule α R n)) := by
+  intro σ f
+  rw [SetLike.mem_coe, mem_homogeneousSubmodule]
+  exact perm_isHomogeneous σ
+
 end IsSymmetric
 
 section IsPrincipalSymmetric

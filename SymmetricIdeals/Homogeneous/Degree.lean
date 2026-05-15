@@ -5,7 +5,8 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.MinDeg
+import SymmetricIdeals.Homogeneous.Basic
+import SymmetricIdeals.Upstream
 
 open MvPolynomial
 
@@ -54,13 +55,40 @@ lemma homogeneousComponent_eq_zero_of_lt_lowestDegree {p : MvPolynomial α R} {i
   refine Nat.sInf_le ?_
   rwa [Set.mem_setOf]
 
+lemma lowestDegree_le_of_homogeneousComponent_ne_zero {f : MvPolynomial α R} {n : ℕ}
+    (h : homogeneousComponent n f ≠ 0) : lowestDegree f ≤ n := by
+  contrapose! h
+  exact homogeneousComponent_eq_zero_of_lt_lowestDegree h
+
+lemma highestDegree_of_isHomogeneous {n : ℕ} {f : MvPolynomial α R} (h : f.IsHomogeneous n)
+    (h0 : f ≠ 0) : highestDegree f = n := by
+  simp [highestDegree, homogeneousComponent_of_mem h, h0]
+
+lemma lowestDegree_of_isHomogeneous {n : ℕ} {f : MvPolynomial α R} (h : f.IsHomogeneous n)
+    (h0 : f ≠ 0) : lowestDegree f = n := by
+  simp [lowestDegree, homogeneousComponent_of_mem h, h0]
+
+@[simp]
+lemma highestDegree_eq_zero_of_isEmpty [IsEmpty α] (f : MvPolynomial α R) :
+    highestDegree f = 0 := by
+  by_cases! h0 : f = 0
+  · simp [h0]
+  exact highestDegree_of_isHomogeneous (isHomogeneous_zero_of_isEmpty f) h0
+
+@[simp]
+lemma lowestDegree_eq_zero_of_isEmpty [IsEmpty α] (f : MvPolynomial α R) :
+    lowestDegree f = 0 := by
+  by_cases! h0 : f = 0
+  · simp [h0]
+  exact lowestDegree_of_isHomogeneous (isHomogeneous_zero_of_isEmpty f) h0
+
 lemma homogeneousComponent_highestDegree_ne_zero {p : MvPolynomial α R} (hp : p ≠ 0) :
     homogeneousComponent (highestDegree p) p ≠ 0 := by
   suffices highestDegree p ∈ {i | homogeneousComponent i p ≠ 0} by rwa [Set.mem_setOf] at this
   exact Nat.sSup_mem (nonempty_setOf_homogeneousComponent hp)
     bddAbove_setOf_homogeneousComponent
 
-lemma lowestDegree_component_ne_zero {p : MvPolynomial α R} (hp : p ≠ 0) :
+lemma homogeneousComponent_lowestDegree_ne_zero {p : MvPolynomial α R} (hp : p ≠ 0) :
     homogeneousComponent (lowestDegree p) p ≠ 0 := by
   suffices lowestDegree p ∈ {i | homogeneousComponent i p ≠ 0} by rwa [Set.mem_setOf] at this
   exact Nat.sInf_mem (nonempty_setOf_homogeneousComponent hp)
@@ -105,7 +133,8 @@ theorem lowestDegree_mul [NoZeroDivisors R] {p q : MvPolynomial α R} (hp : p �
   refine le_antisymm ?_ ?_
   · refine Nat.sInf_le ?_
     rw [Set.mem_setOf, homogeneousComponent_lowestDegree_add_mul]
-    exact mul_ne_zero (lowestDegree_component_ne_zero hp) (lowestDegree_component_ne_zero hq)
+    exact mul_ne_zero (homogeneousComponent_lowestDegree_ne_zero hp)
+      (homogeneousComponent_lowestDegree_ne_zero hq)
   · refine le_csInf (nonempty_setOf_homogeneousComponent (mul_ne_zero hp hq)) ?_
     intro i hi
     rw [Set.mem_setOf] at hi

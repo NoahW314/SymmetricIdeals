@@ -5,14 +5,14 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.MinimalGenerating
-import SymmetricIdeals.SingleDegGen
-import SymmetricIdeals.GradedMinimalGenerators
-import SymmetricIdeals.OrderType
-import SymmetricIdeals.Products.kSymmetric
-import SymmetricIdeals.Products.Monomial
+import SymmetricIdeals.Homogeneous.MinimalGenerators
+import SymmetricIdeals.Homogeneous.SingleDegGen
+import SymmetricIdeals.Homogeneous.GradedMinimalGenerators
+import SymmetricIdeals.PrincipalSymmetric.OrderType
+import SymmetricIdeals.Symmetry.kSymmetric
+import SymmetricIdeals.Product.Monomial
 import SymmetricIdeals.SubmoduleSMul
-import SymmetricIdeals.Degree
+import SymmetricIdeals.Homogeneous.Degree
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 
@@ -36,6 +36,44 @@ lemma perm_mem_symmSet' {p q : MvPolynomial α R} (σ : Equiv.Perm α) [Fintype 
 
 
 section IsDomain
+
+variable {α R : Type*} [CommSemiring R] [NoZeroDivisors R] {I : Ideal (MvPolynomial α R)}
+
+-- It suffices to have J.IsHomogeneous by using the fact that minDeg_mul works with just
+--   homogeneous ideals.  Currently, that lemma is in the MinGens project.
+lemma minDeg_pmul_perm_eq_minDeg_symmSpan {p : MvPolynomial α R} (σ : Equiv.Perm α) {n : ℕ}
+    {J : Ideal (MvPolynomial α R)} (hJ : IsSingleDegGen J) (hp : p.IsHomogeneous n) :
+    minDeg (pmul (σ • p) J) = minDeg (symmSpan {p} * J) := by
+  by_cases! hJB : J = ⊥
+  · simp [hJB]
+  by_cases! hp0 : p = 0
+  · simp [hp0, pmul]
+  have hσ : {σ • p} ⊆ SetLike.coe (homogeneousSubmodule α R n) := by
+    simp [perm_isHomogeneous σ hp]
+  rw [pmul_eq_span_mul, minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB,
+    minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB, minDeg_symmSpan hp hp0, Nat.add_right_cancel_iff]
+  · exact minDeg_homog (by simp [smul_ne_zero_iff_ne, hp0]) hσ
+  · exact isSingleDegGen_symmSpan hp
+  · rwa [ne_eq, symmSpan_eq_bot_iff]
+  · rw [isSingleDegGen_iff]
+    use n, {σ • p}
+  · simp [smul_ne_zero_iff_ne, hp0]
+
+lemma minDeg_pmul_eq_minDeg_symmSpan {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPolynomial α R)}
+    (hJ : IsSingleDegGen J) (hp : p.IsHomogeneous n) :
+    minDeg (pmul p J) = minDeg (symmSpan {p} * J) := by
+  have h := minDeg_pmul_perm_eq_minDeg_symmSpan 1 hJ hp
+  rwa [one_smul] at h
+
+lemma minDeg_pmul {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPolynomial α R)}
+    (hJ : IsSingleDegGen J) (hp : p.IsHomogeneous n) (hJB : J ≠ ⊥) (hp0 : p ≠ 0) :
+    minDeg (pmul p J) = n + minDeg J := by
+  have hp : ({p} : Set (MvPolynomial α R)) ⊆ (homogeneousSubmodule α R n) := by simp [hp]
+  rw [pmul_eq_span_mul, minDeg_mul_eq_add_minDeg ?_ hJ ?_ hJB, minDeg_homog ?_ hp]
+  · simp [hp0]
+  · rw [isSingleDegGen_iff]
+    use n, {p}
+  · simp [hp0]
 
 variable {α R : Type*} [CommRing R] [IsDomain R] {I : Ideal (MvPolynomial α R)}
 

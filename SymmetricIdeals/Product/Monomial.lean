@@ -5,9 +5,9 @@ Authors: Noah Walker
 -/
 
 import Mathlib
-import SymmetricIdeals.Products.kSymmetric
-import SymmetricIdeals.PsiObstructions
-import SymmetricIdeals.MonomialPsi
+import SymmetricIdeals.Symmetry.kSymmetric
+import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
+import SymmetricIdeals.PrincipalSymmetric.MonomialPsi
 import SymmetricIdeals.Upstream
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
