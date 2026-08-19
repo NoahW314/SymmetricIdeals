@@ -38,13 +38,13 @@ lemma coeff_mul_single_homog {d : α →₀ ℕ} {n : ℕ}
     coeff d (f * g) = coeff 0 f * coeff d g := by
   rw [coeff_mul]
   refine Finset.sum_eq_single_of_mem (0, d) ?_ (fun b hab hbd ↦ ?_)
-  · rw [Finset.mem_antidiagonal, zero_add]
-  rw [Finset.mem_antidiagonal] at hab
+  · rw [Finset.HasAntidiagonal.mem_antidiagonal, zero_add]
+  rw [Finset.HasAntidiagonal.mem_antidiagonal] at hab
   have hb2 : b.2.degree ≠ n := by grind [Finsupp.degree_eq_zero_iff]
   simp [hg.coeff_eq_zero hb2]
 
 lemma homogeneousComponent_mul {α R : Type*} [CommSemiring R] {f g : MvPolynomial α R} {n : ℕ} :
-    homogeneousComponent n (f * g) = ∑ d ∈ Finset.antidiagonal n,
+    homogeneousComponent n (f * g) = ∑ d ∈ Finset.HasAntidiagonal.antidiagonal n,
     homogeneousComponent d.1 f * homogeneousComponent d.2 g := by
   ext c
   classical simp only [coeff_homogeneousComponent, coeff_mul, coeff_sum, mul_ite, ite_mul, zero_mul,
@@ -104,7 +104,7 @@ lemma mem_span_homogeneousSubmodule {n m : ℕ} {f : MvPolynomial α R} (h : f.I
   rw [hc] at hnm
   obtain ⟨d, hdc, hdm⟩ := Finsupp.exists_le_degree_eq _ _ hnm
   obtain ⟨e, he⟩ := exists_add_of_le hdc
-  rw [← one_mul (coeff c f), he, ← monomial_mul]
+  rw [← one_mul (coeff c f), he, ← monomial_mul_monomial]
   refine Ideal.mul_mem_right _ _ ?_
   refine Submodule.mem_span_of_mem ?_
   simp [isHomogeneous_monomial _ hdm]
@@ -116,10 +116,14 @@ abbrev homogeneousSubmoduleI (n : ℕ) (I : Ideal (MvPolynomial α R)) :
 lemma homogSubI_monotone (n : ℕ) {I J : Ideal (MvPolynomial α R)} (h : I ≤ J) :
     homogeneousSubmoduleI n I ≤ homogeneousSubmoduleI n J := inf_le_inf_left _ h
 
-@[simp]
 lemma homogeneousSubmoduleI_zero {n : ℕ} :
     homogeneousSubmoduleI n (0 : Ideal (MvPolynomial α R)) = 0 := by
-  simp only [Submodule.zero_eq_bot, Submodule.restrictScalars_bot, bot_le, inf_of_le_right]
+  simp [homogeneousSubmoduleI]
+
+@[simp]
+lemma homogeneousSubmoduleI_bot {n : ℕ} :
+    homogeneousSubmoduleI n (⊥ : Ideal (MvPolynomial α R)) = ⊥ := by
+  simp [homogeneousSubmoduleI]
 
 open Classical in
 @[simp]

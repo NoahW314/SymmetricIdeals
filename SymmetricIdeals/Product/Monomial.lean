@@ -16,11 +16,6 @@ open MvPolynomial Rename Equiv
 open scoped Pointwise
 
 
--- this is being added to Mathlib
-lemma degree_mapDomain {d : α →₀ ℕ} (σ : Perm α) : (Finsupp.mapDomain σ d).degree = d.degree := by
-  simp [Finsupp.mapDomain, Finsupp.sum]
-  dsimp [Finsupp.degree_apply]
-
 lemma Nat.sSup_range_ne_zero {d : α →₀ ℕ} (h : d ≠ 0) : sSup (Set.range d) ≠ 0 := by
   have h : ∃ x : α, d x ≠ 0 := by contrapose! h; exact Finsupp.ext h
   obtain ⟨x, h⟩ := h
@@ -135,9 +130,9 @@ theorem monomialProduct_Psi {R : Type*} [CommRing R] [NoZeroDivisors R]
   have hmdp : minDeg (I * J) = (a + c).degree := by
     rw [minDeg_mul_eq_add_minDeg hIs hJs hIB hJB, map_add, haI, hbJ,
       minDeg_symmSpan (isHomogeneous_monomial _ rfl) (by simp),
-      minDeg_symmSpan (isHomogeneous_monomial _ rfl) (by simp), degree_mapDomain σ]
+      minDeg_symmSpan (isHomogeneous_monomial _ rfl) (by simp), Finsupp.degree_mapDomain σ]
   have hmdp2 : minDeg (I * J) = (a + Finsupp.mapDomain (swap x i) c).degree := by
-    rw [hmdp, map_add, map_add, Nat.add_left_cancel_iff, degree_mapDomain (swap x i)]
+    rw [hmdp, map_add, map_add, Nat.add_left_cancel_iff, Finsupp.degree_mapDomain (swap x i)]
   apply not_psi_of_nonzero_disjoint_orderTypes (isSingleDegGen_mul hIs hJs) ?_ ?_
     (evalOne_monomial_ne_zero (a + c))
     (evalOne_monomial_ne_zero (a + (Finsupp.mapDomain (swap x i) c)))
@@ -152,9 +147,9 @@ theorem monomialProduct_Psi {R : Type*} [CommRing R] [NoZeroDivisors R]
         at hnodup
       rw [Multiset.le_iff_subset hnodup]
       intro z
+      simp only [Multiset.mem_filter]
       simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.mapDomain_equiv_apply, symm_swap,
-        Multiset.mem_filter, Finset.mem_val, Finsupp.mem_support_iff, ne_eq, Nat.add_eq_zero_iff,
-        not_and, and_imp]
+        Finset.mem_val, Finsupp.mem_support_iff, ne_eq, Nat.add_eq_zero_iff, not_and, and_imp]
       intro haz hac
       constructor
       · intro haz0
@@ -183,15 +178,20 @@ theorem monomialProduct_Psi {R : Type*} [CommRing R] [NoZeroDivisors R]
     · push Not
       use x
       right
-      simp
+      simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.mapDomain_equiv_apply, symm_swap,
+        Multiset.mem_filter, Finset.mem_val, Finsupp.mem_support_iff, swap_apply_left, ne_eq,
+        Nat.add_eq_zero_iff, not_and, Nat.add_left_cancel_iff]
       constructor
       · simp [c, hσx, hσi, hm, hb.symm]
-      · simp [c, hσx, hby0]
+      · simp only [hσx, Finsupp.mapDomain_equiv_apply, Multiset.mem_filter, Finset.mem_val,
+          Finsupp.mem_support_iff, Finsupp.coe_add, Pi.add_apply, ne_eq, Nat.add_eq_zero_iff, hby0,
+          and_false, not_false_eq_true, Nat.add_left_cancel_iff, true_and, c]
+        rw [← Finsupp.mapDomain_equiv_apply, hσx]
     · exact Multiset.Nodup.filter _ (a + Finsupp.mapDomain (⇑(swap x i)) c).support.nodup
     · exact Multiset.Nodup.filter _ (a + c).support.nodup
-  · rw [← mul_one 1, ← monomial_mul, haI, hbJ]
+  · rw [← mul_one 1, ← monomial_mul_monomial, haI, hbJ]
     exact Submodule.mul_mem_mul mem_symmSpan_self <| mem_symmSpan_monomial σ
-  · rw [← mul_one 1, ← monomial_mul, haI, hbJ]
+  · rw [← mul_one 1, ← monomial_mul_monomial, haI, hbJ]
     refine Submodule.mul_mem_mul mem_symmSpan_self ?_
     simp only [← Finsupp.mapDomain_comp, c]
     apply mem_symmSpan_monomial ((swap x i) * σ)

@@ -9,9 +9,10 @@ import SymmetricIdeals.Symmetry.Basic
 import SymmetricIdeals.Symmetry.kSymmetric
 import SymmetricIdeals.Upstream
 
-variable {R S : Type*} [Semiring R] [Semiring S] [Module R S] [SMulCommClass R S S]
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Module R S] [SMulCommClass R S S]
+  [IsScalarTower R S S]
 
-abbrev pmul (p : S) (M : Submodule R S) := Submodule.map (LinearMap.mulLeft R p) M
+abbrev pmul (p : S) (M : Submodule R S) := Submodule.map (LinearMap.mul R S p) M
 
 variable {p q : S} {M : Submodule R S}
 
@@ -22,7 +23,7 @@ lemma mem_pmul_of_mul_mem (p q) (hq : q ∈ M) : p * q ∈ pmul p M := by
 
 
 lemma pmul_bij [IsDomain S] (p) (hp : p ≠ 0) : Function.Bijective
-    (fun q ↦ ⟨LinearMap.mulLeft R p q, Submodule.apply_coe_mem_map _ q⟩ : M → pmul p M) := by
+    (fun q ↦ ⟨LinearMap.mul R S p q, Submodule.apply_coe_mem_map _ q⟩ : M → pmul p M) := by
   constructor
   · intro x y hxy
     simpa [hp] using hxy
@@ -30,8 +31,9 @@ lemma pmul_bij [IsDomain S] (p) (hp : p ≠ 0) : Function.Bijective
     simpa using hq
 
 lemma pmul_restrict_bij [IsDomain S] (p : S) (hp : p ≠ 0) : Function.Bijective
-    ((LinearMap.mulLeft R p).restrict (fun _ ↦ Submodule.mem_map_of_mem (p := M))) := by
+    ((LinearMap.mul R S p).restrict (fun _ ↦ Submodule.mem_map_of_mem (p := M))) := by
   convert (pmul_bij p hp)
+  rfl
 
 noncomputable
 def pmulEquiv [IsDomain S] (p : S) (M : Submodule R S) (hp : p ≠ 0) :
@@ -42,7 +44,6 @@ lemma rank_eq_pmul_rank [IsDomain S] (p) (hp : p ≠ 0) :
 
 
 lemma dvd_of_mem_pmul (h : q ∈ pmul p M) : p ∣ q := by
-  simp only [Submodule.mem_map, LinearMap.mulLeft_apply] at h
   obtain ⟨r, hr, h⟩ := h
   use r
   exact h.symm
@@ -60,7 +61,7 @@ variable {S : Type*} [CommSemiring S] {I J : Ideal S} {p : S}
 lemma pmul_eq_span_mul : pmul p I = Ideal.span {p} * I := by
   rw [pmul, ← Submodule.top_smul I, smul_eq_mul, mul_comm ⊤, ← smul_eq_mul,
     Submodule.map_smul'' I ⊤ _]
-  simp [LinearMap.mulLeft_range, mul_comm]
+  simp [mul_comm]
 
 lemma pmul_mul : pmul p (I * J) = (pmul p I) * J := by
   rw [pmul_eq_span_mul, pmul_eq_span_mul, mul_assoc]
@@ -81,7 +82,7 @@ lemma symmSpan_eq_pmul_symmSpan {p q r : MvPolynomial α R} (h : p = q * r) (hq 
 
 lemma pmul_restrictScalars {p : MvPolynomial α R} {I : Ideal (MvPolynomial α R)} :
     pmul p (Submodule.restrictScalars R I) = Submodule.restrictScalars R (pmul p I) := by
-  simp [pmul, Submodule.restrictScalars_map, LinearMap.restrictScalars_mulLeft]
+  simp [pmul, Submodule.restrictScalars_map, LinearMap.restrictScalars_mul]
 
 lemma pmul_perm_le_symmSpan_mul {p : MvPolynomial α R} {σ : Equiv.Perm α}
     {J : Ideal (MvPolynomial α R)} : pmul (σ • p) J ≤ symmSpan {p} * J := by

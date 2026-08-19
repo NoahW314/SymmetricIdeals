@@ -181,7 +181,7 @@ lemma split_orderTypes {f p : MvPolynomial α R} {n : ℕ} (hf : f.IsHomogeneous
     ring
   use ∑ d ∈ S, monomial d (coeff d f), f - (∑ d ∈ S, monomial d (coeff d f))
   have hotp : orderTypes (∑ d ∈ S.toFinset, (monomial d.1) (coeff d f)) = orderTypes p := by
-    simp only [Set.toFinset_setOf, S]
+    simp only [Set.toFinset_ofPred, S]
     exact orderTypes_sum_support_eq_orderTypes_finsupp_sum hc
   constructor
   · exact hfpq
@@ -199,7 +199,7 @@ lemma split_orderTypes {f p : MvPolynomial α R} {n : ℕ} (hf : f.IsHomogeneous
     by_cases! hef : e ∈ f.support
     · have hef2 : ⟨e, hef⟩ ∈ S := by
         unfold S
-        rw [Set.mem_setOf, Subtype.coe_mk, he, ← hd]
+        rw [Set.mem_ofPred, Subtype.coe_mk, he, ← hd]
         exact mem_orderTypes_of_coeff_ne_zero hdc
       rw [Finset.sum_eq_single ⟨e, hef⟩] <;> grind [coeff_monomial]
     · rw [notMem_support_iff] at hef
@@ -304,7 +304,7 @@ lemma mgs_le_factorial_of_isPSI (h : IsPrincipalSymmetric I) :
       ← Classical.choose_spec (mem_symmSet_singleton.mp hg'), h]
   refine le_trans ?_ hc
   refine Nat.sInf_le ?_
-  simp only [Set.mem_image, Set.mem_setOf_eq]
+  simp only [Set.mem_image, Set.mem_ofPred_eq]
   use (symmSet {f}).toFinset
   constructor
   · constructor

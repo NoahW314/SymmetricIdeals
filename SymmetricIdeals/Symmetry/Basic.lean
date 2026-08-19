@@ -36,7 +36,7 @@ lemma perm_isHomogeneous (σ : Perm α) {p : MvPolynomial α R} {n : ℕ} (h : p
 lemma symmAct_homogeneousComponent {σ : Perm α} {p : MvPolynomial α R} {n : ℕ} :
     σ • (homogeneousComponent n p) = homogeneousComponent n (σ • p) := by
   rw [symmAct_def, symmAct_def]
-  exact rename_homogeneousComponent σ.injective
+  exact rename_homogeneousComponent _ _
 
 @[simp]
 lemma perm_monomial {σ : Equiv.Perm α} {d : α →₀ ℕ} {c : R} :
@@ -184,7 +184,7 @@ lemma isSymmetric_iff_eq_symmSpan {I : Ideal (MvPolynomial α R)} :
 
 lemma symmSpan_le_iff_le {I : Ideal (MvPolynomial α R)}
     (h : IsSymmetric (SetLike.coe I)) : symmSpan S ≤ I ↔ S ≤ I := by
-  rw [← symmSet_le_iff h, Ideal.span_le, Set.le_iff_subset]
+  rw [← symmSet_le_iff h, Ideal.span_le]
 
 lemma isSymmetric_homogeneousSubmodule {n : ℕ} :
     IsSymmetric (SetLike.coe (homogeneousSubmodule α R n)) := by

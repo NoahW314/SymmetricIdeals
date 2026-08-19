@@ -19,13 +19,13 @@ def minDeg (I : Ideal (MvPolynomial α R)) := sInf {n : ℕ | (homogeneousSubmod
 
 @[simp]
 lemma minDeg_bot : minDeg (⊥ : Ideal (MvPolynomial α R)) = 0 := by
-  simp [minDeg]
+  simp [minDeg, homogeneousSubmoduleI]
 
 @[simp]
 lemma minDeg_top : minDeg (⊤ : Ideal (MvPolynomial α R)) = 0 := by
   rcases subsingleton_or_nontrivial R with h | h
   · simp [Submodule.eq_bot_of_subsingleton]
-  · simp [minDeg, ← Submodule.zero_eq_bot]
+  · simp [minDeg, ← Submodule.zero_eq_bot, homogeneousSubmoduleI]
 
 lemma minDeg_mem (h : minDeg I ≠ 0) : minDeg I ∈ {n : ℕ | (homogeneousSubmoduleI n I) ≠ ⊥} := by
   refine Nat.sInf_mem ?_
@@ -42,7 +42,7 @@ lemma bot_of_empty_minDeg (h : I.IsHomogeneous (homogeneousSubmodule α R))
   contrapose! hIB
   use i
   simp only [ne_eq, Submodule.eq_bot_iff, Submodule.mem_inf, mem_homogeneousSubmodule,
-    Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_setOf_eq]
+    Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_ofPred_eq]
   use homogeneousComponent i p
   simp [hIB, homogeneousComponent_isHomogeneous, homogeneousComponent_mem_of_mem h hp]
 
@@ -70,7 +70,7 @@ theorem minDeg_antitone {J : Ideal (MvPolynomial α R)}
     (hI : I.IsHomogeneous (homogeneousSubmodule α R)) (hb : I ≠ ⊥) (hIJ : I ≤ J) :
     minDeg I ≥ minDeg J := by
   refine Nat.sInf_le ?_
-  simp only [ne_eq, ← bot_lt_iff_ne_bot, Set.mem_setOf_eq]
+  simp only [ne_eq, ← bot_lt_iff_ne_bot, Set.mem_ofPred_eq]
   refine lt_of_lt_of_le ?_ (homogSubI_monotone _ hIJ)
   rw [bot_lt_iff_ne_bot]
   exact minDeg_mem' hb hI
@@ -83,7 +83,7 @@ theorem minDeg_homog {n : ℕ} {S : Set (MvPolynomial α R)} (hS : ∃ p ∈ S, 
   refine le_antisymm (Nat.sInf_le hn) ?_
   refine le_csInf (by use n) ?_
   simp only [ne_eq, Submodule.eq_bot_iff, Submodule.mem_inf, mem_homogeneousSubmodule,
-    Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_setOf_eq, forall_exists_index]
+    Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_ofPred_eq, forall_exists_index]
   intro m p hp hpS hp0
   by_contra! hnm
   rw [Submodule.mem_span_iff_exists_finset_subset] at hpS
@@ -105,7 +105,7 @@ theorem minDeg_homog {n : ℕ} {S : Set (MvPolynomial α R)} (hS : ∃ p ∈ S, 
   apply hTS at hxT
   apply h at hxT
   simp [homogeneousComponent_of_mem hxT]
-  grind [Finset.mem_antidiagonal]
+  grind [Finset.HasAntidiagonal.mem_antidiagonal]
 
 lemma minDeg_homogeneousSubmodule [Nonempty α]
     {R : Type*} [CommRing R] [Nontrivial R] [IsReduced R] {n : ℕ} :
@@ -121,7 +121,7 @@ variable {R : Type*} [Field R] {I : Ideal (MvPolynomial α R)}
 
 lemma top_of_zero_mem_minDeg (h : 0 ∈ {n | homogeneousSubmoduleI n I ≠ ⊥}) : I = ⊤ := by
   simp only [ne_eq, Submodule.eq_bot_iff, Submodule.mem_inf, mem_homogeneousSubmodule,
-    Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_setOf_eq] at h
+    Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_ofPred_eq] at h
   obtain ⟨p, hph, hp, hp0⟩ := h
   refine Ideal.eq_top_of_isUnit_mem _ hp ?_
   rw [← totalDegree_zero_iff_isHomogeneous, totalDegree_eq_zero_iff_eq_C] at hph

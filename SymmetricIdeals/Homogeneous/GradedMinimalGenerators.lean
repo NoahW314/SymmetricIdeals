@@ -24,7 +24,7 @@ variable {R : Type*} [CommRing R] [IsNoetherianRing R] {I : Ideal (MvPolynomial 
 lemma homogSubI_mod_fin (n : ℕ) (I : Ideal (MvPolynomial α R)) :
     Module.Finite R (homogeneousSubmoduleI n I) := by
   rw [Module.Finite.iff_fg]
-  exact Submodule.FG.of_le (homogeneousSubmodule_fg n) inf_le_left
+  exact Submodule.FG.of_le (homogeneousSubmodule_fg _ _ n) inf_le_left
 
 lemma homogSubI_mod_fin' (n : ℕ) (I : Ideal (MvPolynomial α R)) :
     Module.Finite R (Submodule.span R ((homogeneousSubmoduleI n I) : Set (MvPolynomial α R))) := by
@@ -62,7 +62,7 @@ lemma finrank_mem_minDeg (h : IsSingleDegGen I) :
 theorem mgs_le_finrank (h : IsSingleDegGen I) : minGenSize I ≤
     Module.finrank R (homogeneousSubmoduleI (minDeg I) I) := by
   refine Nat.sInf_le ?_
-  simp only [Set.mem_image, Set.mem_setOf]
+  simp only [Set.mem_image, Set.mem_ofPred]
   exact finrank_mem_minDeg h
 
 theorem mgs_ge_finrank (h : IsSingleDegGen I) : minGenSize I ≥
@@ -73,7 +73,7 @@ theorem mgs_ge_finrank (h : IsSingleDegGen I) : minGenSize I ≥
     refine Nat.sInf_mem ?_
     use Module.finrank R (homogeneousSubmoduleI (minDeg I) I)
     exact finrank_mem_minDeg h
-  simp only [Set.mem_image, Set.mem_setOf_eq] at hmgs
+  simp only [Set.mem_image, Set.mem_ofPred_eq] at hmgs
   obtain ⟨S, ⟨hsz, hspan⟩, hcard⟩ := hmgs
   rw [← hcard, ge_iff_le]
   let S' := Finset.image (homogeneousComponent (minDeg I)) S

@@ -28,7 +28,7 @@ lemma bddAbove_setOf_homogeneousComponent {p : MvPolynomial α R} :
   rw [bddAbove_def]
   use p.totalDegree
   intro i hi
-  rw [Set.mem_setOf] at hi
+  rw [Set.mem_ofPred] at hi
   contrapose! hi
   exact homogeneousComponent_eq_zero i p hi
 
@@ -38,7 +38,7 @@ lemma nonempty_setOf_homogeneousComponent {p : MvPolynomial α R} (hp : p ≠ 0)
   apply Finset.exists_ne_zero_of_sum_ne_zero at hp
   obtain ⟨i, hi, hp⟩ := hp
   use i
-  rwa [Set.mem_setOf]
+  rwa [Set.mem_ofPred]
 
 lemma lowestDegree_le_highestDegree (p : MvPolynomial α R) : lowestDegree p ≤ highestDegree p := by
   by_cases hp : p = 0
@@ -53,7 +53,7 @@ lemma homogeneousComponent_eq_zero_of_lt_lowestDegree {p : MvPolynomial α R} {i
     (h : i < lowestDegree p) : homogeneousComponent i p = 0 := by
   contrapose! h
   refine Nat.sInf_le ?_
-  rwa [Set.mem_setOf]
+  rwa [Set.mem_ofPred]
 
 lemma lowestDegree_le_of_homogeneousComponent_ne_zero {f : MvPolynomial α R} {n : ℕ}
     (h : homogeneousComponent n f ≠ 0) : lowestDegree f ≤ n := by
@@ -73,24 +73,24 @@ lemma highestDegree_eq_zero_of_isEmpty [IsEmpty α] (f : MvPolynomial α R) :
     highestDegree f = 0 := by
   by_cases! h0 : f = 0
   · simp [h0]
-  exact highestDegree_of_isHomogeneous (isHomogeneous_zero_of_isEmpty f) h0
+  exact highestDegree_of_isHomogeneous (isHomogeneous_of_isEmpty _ _ f) h0
 
 @[simp]
 lemma lowestDegree_eq_zero_of_isEmpty [IsEmpty α] (f : MvPolynomial α R) :
     lowestDegree f = 0 := by
   by_cases! h0 : f = 0
   · simp [h0]
-  exact lowestDegree_of_isHomogeneous (isHomogeneous_zero_of_isEmpty f) h0
+  exact lowestDegree_of_isHomogeneous (isHomogeneous_of_isEmpty _ _ f) h0
 
 lemma homogeneousComponent_highestDegree_ne_zero {p : MvPolynomial α R} (hp : p ≠ 0) :
     homogeneousComponent (highestDegree p) p ≠ 0 := by
-  suffices highestDegree p ∈ {i | homogeneousComponent i p ≠ 0} by rwa [Set.mem_setOf] at this
+  suffices highestDegree p ∈ {i | homogeneousComponent i p ≠ 0} by rwa [Set.mem_ofPred] at this
   exact Nat.sSup_mem (nonempty_setOf_homogeneousComponent hp)
     bddAbove_setOf_homogeneousComponent
 
 lemma homogeneousComponent_lowestDegree_ne_zero {p : MvPolynomial α R} (hp : p ≠ 0) :
     homogeneousComponent (lowestDegree p) p ≠ 0 := by
-  suffices lowestDegree p ∈ {i | homogeneousComponent i p ≠ 0} by rwa [Set.mem_setOf] at this
+  suffices lowestDegree p ∈ {i | homogeneousComponent i p ≠ 0} by rwa [Set.mem_ofPred] at this
   exact Nat.sInf_mem (nonempty_setOf_homogeneousComponent hp)
 
 lemma highestDegree_eq_totalDegree {p : MvPolynomial α R} : highestDegree p = p.totalDegree := by
@@ -102,10 +102,10 @@ lemma highestDegree_eq_totalDegree {p : MvPolynomial α R} : highestDegree p = p
   · simp only [totalDegree, highestDegree, ne_eq, Finset.sup_le_iff, mem_support_iff]
     intro d hd
     refine le_csSup bddAbove_setOf_homogeneousComponent ?_
-    rw [Finsupp.sum, Set.mem_setOf_eq]
+    rw [Finsupp.sum, Set.mem_ofPred_eq]
     contrapose! hd
     apply_fun (coeff d) at hd
-    simpa [coeff_homogeneousComponent, Finsupp.degree] using hd
+    simpa [coeff_homogeneousComponent, Finsupp.degree_apply] using hd
 
 theorem highestDegree_mul [NoZeroDivisors R] {p q : MvPolynomial α R} (hp : p ≠ 0) (hq : q ≠ 0) :
     highestDegree (p * q) = highestDegree p + highestDegree q := by
@@ -116,9 +116,9 @@ lemma homogeneousComponent_lowestDegree_add_mul {p q : MvPolynomial α R} :
     homogeneousComponent (lowestDegree p + lowestDegree q) (p * q) =
     (homogeneousComponent (lowestDegree p) p) * (homogeneousComponent (lowestDegree q) q) := by
   rw [homogeneousComponent_mul, Finset.sum_eq_single_of_mem (lowestDegree p, lowestDegree q)]
-  · rw [Finset.mem_antidiagonal]
+  · rw [Finset.HasAntidiagonal.mem_antidiagonal]
   intro x hx hxl
-  rw [Finset.mem_antidiagonal] at hx
+  rw [Finset.HasAntidiagonal.mem_antidiagonal] at hx
   wlog! hxp : x.1 > lowestDegree p
   · rw [add_comm x.1, add_comm (lowestDegree p)] at hx
     specialize this (x.2, x.1) hx ?_ ?_
@@ -132,17 +132,17 @@ theorem lowestDegree_mul [NoZeroDivisors R] {p q : MvPolynomial α R} (hp : p �
     lowestDegree (p * q) = lowestDegree p + lowestDegree q := by
   refine le_antisymm ?_ ?_
   · refine Nat.sInf_le ?_
-    rw [Set.mem_setOf, homogeneousComponent_lowestDegree_add_mul]
+    rw [Set.mem_ofPred, homogeneousComponent_lowestDegree_add_mul]
     exact mul_ne_zero (homogeneousComponent_lowestDegree_ne_zero hp)
       (homogeneousComponent_lowestDegree_ne_zero hq)
   · refine le_csInf (nonempty_setOf_homogeneousComponent (mul_ne_zero hp hq)) ?_
     intro i hi
-    rw [Set.mem_setOf] at hi
+    rw [Set.mem_ofPred] at hi
     suffices ∃ j k, j + k = i ∧ lowestDegree p ≤ j ∧ lowestDegree q ≤ k by grind
     rw [homogeneousComponent_mul] at hi
     apply Finset.exists_ne_zero_of_sum_ne_zero at hi
     obtain ⟨x, hi, hx⟩ := hi
-    rw [Finset.mem_antidiagonal] at hi
+    rw [Finset.HasAntidiagonal.mem_antidiagonal] at hi
     rw [mul_ne_zero_iff] at hx
     use x.1, x.2
     constructor
@@ -177,9 +177,9 @@ theorem isHomogeneous_iff_lowestDegree_eq_highestDegree {p : MvPolynomial α R} 
       suffices i ∈ {p.totalDegree} by
         rw [Set.mem_singleton_iff] at this
         exact this.symm
-      rwa [← this, Set.mem_setOf]
+      rwa [← this, Set.mem_ofPred]
     ext i
-    simp only [ne_eq, Set.mem_setOf_eq, ← highestDegree_eq_totalDegree, Set.mem_singleton_iff]
+    simp only [ne_eq, Set.mem_ofPred_eq, ← highestDegree_eq_totalDegree, Set.mem_singleton_iff]
     constructor
     · intro hi
       refine le_antisymm (le_csSup bddAbove_setOf_homogeneousComponent hi) ?_

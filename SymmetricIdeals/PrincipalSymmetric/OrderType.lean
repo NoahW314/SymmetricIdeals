@@ -56,7 +56,7 @@ lemma isStronglyHomogeneous_empty_iff {p : MvPolynomial α R} :
     exact isStronglyHomogeneous_constant c
 
 lemma orderType_sum_eq_degree {d : α →₀ ℕ} : (orderType d).sum = d.degree := by
-  simp [orderType, Finsupp.degree]
+  simp [orderType, Finsupp.degree_apply]
 
 lemma isHomogeneous_of_isStronglyHomogeneous {p : MvPolynomial α R} (a : Multiset ℕ)
     (h : p.IsStronglyHomogeneous a) : p.IsHomogeneous (Multiset.sum a) := by
@@ -176,7 +176,7 @@ lemma orderTypeComponent_eq_span {a : Multiset ℕ} : orderTypeComponent α R a 
     rw [← mul_one (coeff d p), ← smul_eq_mul, ← smul_monomial]
     refine Submodule.smul_mem _ _ ?_
     refine Submodule.mem_span_of_mem ?_
-    simp only [Set.mem_image, Set.mem_setOf_eq]
+    simp only [Set.mem_image, Set.mem_ofPred_eq]
     use d
     constructor
     · rw [mem_support_iff] at hd
@@ -184,7 +184,7 @@ lemma orderTypeComponent_eq_span {a : Multiset ℕ} : orderTypeComponent α R a 
     · rfl
   · rw [Submodule.span_le]
     intro p
-    simp only [Set.mem_image, Set.mem_setOf_eq, orderTypeComponent, Submodule.coe_set_mk,
+    simp only [Set.mem_image, Set.mem_ofPred_eq, orderTypeComponent, Submodule.coe_set_mk,
       AddSubmonoid.coe_set_mk, AddSubsemigroup.coe_set_mk, forall_exists_index, and_imp]
     intro d hd hdp
     subst hdp
@@ -305,7 +305,7 @@ lemma symmSpan_monomial_eq_span_orderTypeComponent {d : α →₀ ℕ} :
   refine le_trans ?_ (Submodule.span_le_restrictScalars R (MvPolynomial α R) _)
   refine Submodule.span_mono ?_
   intro m
-  simp only [Set.mem_image, Set.mem_setOf_eq, mem_symmSet_singleton, perm_monomial,
+  simp only [Set.mem_image, Set.mem_ofPred_eq, mem_symmSet_singleton, perm_monomial,
     forall_exists_index, and_imp]
   intro e hmsh hem
   rw [← hem]

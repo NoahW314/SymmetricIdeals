@@ -93,7 +93,7 @@ lemma homogSubI_pmul {p : MvPolynomial α R} {I : Ideal (MvPolynomial α R)} {n 
   · intro hq
     by_cases hq0 : q = 0
     · simp [hq0]
-    simp only [Submodule.mem_map, LinearMap.mulLeft_apply, mem_homogeneousSubmodule] at hqI ⊢
+    simp only [Submodule.mem_map, LinearMap.mul_apply_apply, mem_homogeneousSubmodule] at hqI ⊢
     obtain ⟨r, hrI, hr⟩ := hqI
     use r
     constructor
@@ -109,7 +109,7 @@ lemma homogSubI_pmul {p : MvPolynomial α R} {I : Ideal (MvPolynomial α R)} {n 
       exact Nat.add_left_cancel hq0
     · exact hr
   · intro hq
-    simp only [Submodule.mem_map, mem_homogeneousSubmodule, LinearMap.mulLeft_apply] at hq
+    simp only [Submodule.mem_map, mem_homogeneousSubmodule, LinearMap.mul_apply_apply] at hq
     obtain ⟨r, hr, hq⟩ := hq
     rw [minDeg_pmul hI hp hIB hp0, ← hq]
     exact IsHomogeneous.mul hp hr
@@ -124,7 +124,7 @@ lemma pmul_isSingleDegGen_iff {p : MvPolynomial α R} {I : Ideal (MvPolynomial �
     have hSp : ∀ g ∈ S, ∃ q, g = p * q := by
       intro g hg
       apply Ideal.subset_span at hg
-      simp only [← h, Submodule.map_coe, LinearMap.mulLeft_apply, Set.mem_image,
+      simp only [← h, Submodule.map_coe, LinearMap.mul_apply_apply, Set.mem_image,
         SetLike.mem_coe] at hg
       obtain ⟨q, _, hg⟩ := hg
       use q
@@ -179,7 +179,8 @@ variable {α R : Type*} [Field R]
 
 noncomputable scoped
 instance MvPolynomial.normalizedGCDMonoid : NormalizedGCDMonoid (MvPolynomial α R) := by
-  have : NormalizationMonoid (MvPolynomial α R) := UniqueFactorizationMonoid.normalizationMonoid
+  have : StrongNormalizationMonoid (MvPolynomial α R) :=
+    UniqueFactorizationMonoid.strongNormalizationMonoid
   exact UniqueFactorizationMonoid.toNormalizedGCDMonoid (MvPolynomial α R)
 
 lemma gcd_symmSet_kSymmetric {p : MvPolynomial α R} [Fintype (symmSet {p})] :
@@ -317,7 +318,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
     use r
     by_contra! hσ
     simp only [hr, forall_const] at hσ
-    suffices q * r ∣ q by exact hr.1.not_unit <| (mul_dvd_left_iff_isUnit hq0).mp this
+    suffices q * r ∣ q by exact hr.1.not_isUnit <| (mul_dvd_left_iff_isUnit hq0).mp this
     rw [Multiset.dvd_gcd]
     intro b hb
     simp only [Finset.mem_val, Set.mem_toFinset, mem_symmSet_singleton] at hb
@@ -337,7 +338,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
   rw [hprJ]
   obtain ⟨T, hT, hTJ⟩ := isSingleDegGen_iff_exists_finset.mp hJ
   classical
-  rw [← Ideal.span_sdiff_singleton_zero'] at hTJ
+  rw [← Ideal.span_sdiff_singleton_zero, ← Finset.coe_singleton, ← Finset.coe_sdiff] at hTJ
   have hTe' : ∃ x ∈ (T \ {0}), x ≠ 0 := by
     contrapose! hJB
     simpa [hTJ] using hJB
@@ -359,7 +360,8 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
   rw [hJS, mgs_pmul_eq_mgs f hS's hfh hf0, mul_comm, ← pmul_mul, mul_comm,
       mgs_pmul_eq_mgs f (isSingleDegGen_mul (isSingleDegGen_symmSpan hp'h) hS's) hfh hf0]
   obtain ⟨T', hT', hJT'⟩ := isSingleDegGen_iff_exists_finset.mp hS's
-  nth_rw 2 [← Ideal.span_sdiff_singleton_zero'] at hJT'
+  nth_rw 2 [← Ideal.span_sdiff_singleton_zero] at hJT'
+  rw [← Finset.coe_singleton, ← Finset.coe_sdiff] at hJT'
   have hT'g : ∃ g ∈ T' \ {0}, ¬ r ∣ g  := by
     have hSu : IsUnit (S'.val.gcd) := by
       rw [← mul_dvd_left_iff_isUnit hf0, Multiset.dvd_gcd]
@@ -372,7 +374,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
       obtain ⟨g', hfg'⟩ := Multiset.gcd_dvd hgS'
       rw [Classical.choose_spec <| Multiset.gcd_dvd hf', hfg', ← mul_assoc]
       exact dvd_mul_right (f * S'.val.gcd) g'
-    apply Prime.not_unit at hr
+    apply Prime.not_isUnit at hr
     contrapose! hr
     refine isUnit_of_dvd_unit ?_ hSu
     simp only [Multiset.dvd_gcd, Finset.mem_val]
@@ -380,7 +382,8 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
     have hgT' : g ∈ Ideal.span (T' \ {0} : Finset (MvPolynomial α R)) := by
       rw [← hJT']
       exact Submodule.mem_span_of_mem hg
-    refine dvd_of_mem_span ?_ hgT'
+    refine Submodule.span_induction ?_ (dvd_zero _) (fun _ _ _ _ ↦ dvd_add)
+      (fun _ _ _ ↦ dvd_smul_of_dvd _) hgT'
     simpa using hr
   refine mgs_one_le_mgs_mul' σ hS's hp'h hp0' ?_
   contrapose! hT'g

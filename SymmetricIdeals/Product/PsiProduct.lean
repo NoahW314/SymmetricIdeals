@@ -43,7 +43,7 @@ lemma mgs_eq_one_iff_kSymmetric (hI : IsSymmetric (SetLike.coe I))
       contrapose! h
       simp [h]
     apply Nat.sInf_mem at hinf
-    simp only [h, Set.mem_image, Set.mem_setOf_eq] at hinf
+    simp only [h, Set.mem_image, Set.mem_ofPred_eq] at hinf
     obtain ⟨S, ⟨hS0, hSI⟩, hS1⟩ := hinf
     obtain ⟨p, hS1⟩ := Finset.card_eq_one.mp hS1
     use p
@@ -61,7 +61,7 @@ lemma mgs_eq_one_iff_kSymmetric (hI : IsSymmetric (SetLike.coe I))
   · intro h
     obtain ⟨p, hp, hpI⟩ := h
     have hpS : 1 ∈ Finset.card '' {S | 0 ∉ S ∧ I = Ideal.span (SetLike.coe S)} := by
-      simp only [Set.mem_image, Set.mem_setOf_eq]
+      simp only [Set.mem_image, Set.mem_ofPred_eq]
       use {p}
       constructor
       constructor
@@ -74,7 +74,7 @@ lemma mgs_eq_one_iff_kSymmetric (hI : IsSymmetric (SetLike.coe I))
     refine le_antisymm (Nat.sInf_le hpS) <| le_csInf ?_ ?_
     · use 1
     intro n hn
-    simp only [Set.mem_image, Set.mem_setOf_eq] at hn
+    simp only [Set.mem_image, Set.mem_ofPred_eq] at hn
     obtain ⟨S, ⟨hS0, hS⟩, hSn⟩ := hn
     contrapose! hIB
     simp at hIB

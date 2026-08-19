@@ -25,7 +25,7 @@ lemma minDeg_symmSpan {f : MvPolynomial α R} {n : ℕ} (h : f.IsHomogeneous n) 
   refine minDeg_homog ?_ ?_
   · use f
     simp only [mem_symmSet_singleton_self, ne_eq, h0, not_false_eq_true, and_self]
-  · rw [← Set.le_iff_subset, symmSet_le_iff isSymmetric_homogeneousSubmodule]
+  · rw [symmSet_le_iff isSymmetric_homogeneousSubmodule]
     simp [h]
 
 lemma lowestDegree_perm {f : MvPolynomial α R} {σ : Perm α} :
@@ -39,7 +39,7 @@ lemma minDeg_gen_eq {f : MvPolynomial α R} (h : I = symmSpan {f})
   rw [span_union_homogeneousComponent_image h hI, ← Ideal.span_sdiff_singleton_zero, minDeg_homog']
   · have hf : lowestDegree f ∈
         lowestDegree '' ((⋃ n, homogeneousComponent n '' symmSet {f}) \ {0}) := by
-      simp only [Set.mem_image, Set.mem_diff, Set.mem_iUnion, mem_symmSet_singleton,
+      simp only [Set.mem_image, Set.mem_sdiff, Set.mem_iUnion, mem_symmSet_singleton,
         exists_exists_eq_and, Set.mem_singleton_iff, ne_eq, ↓existsAndEq, true_and]
       use lowestDegree f, 1
       simp only [one_smul, homogeneousComponent_lowestDegree_ne_zero hf0, not_false_eq_true,
@@ -49,7 +49,7 @@ lemma minDeg_gen_eq {f : MvPolynomial α R} (h : I = symmSpan {f})
     refine le_antisymm (Nat.sInf_le hf) ?_
     refine le_csInf ?_ ?_
     · use lowestDegree f
-    · simp only [Set.mem_image, Set.mem_diff, Set.mem_iUnion, mem_symmSet_singleton,
+    · simp only [Set.mem_image, Set.mem_sdiff, Set.mem_iUnion, mem_symmSet_singleton,
         exists_exists_eq_and, Set.mem_singleton_iff, ne_eq, ↓existsAndEq, true_and,
         forall_exists_index, and_imp]
       intro n m σ hhc hm
@@ -57,7 +57,7 @@ lemma minDeg_gen_eq {f : MvPolynomial α R} (h : I = symmSpan {f})
       rw [lowestDegree_of_isHomogeneous (homogeneousComponent_isHomogeneous _ _) hhc]
       apply lowestDegree_le_of_homogeneousComponent_ne_zero at hhc
       rwa [lowestDegree_perm] at hhc
-  · simp only [Set.mem_diff, Set.mem_iUnion, Set.mem_image, mem_symmSet_singleton,
+  · simp only [Set.mem_sdiff, Set.mem_iUnion, Set.mem_image, mem_symmSet_singleton,
       exists_exists_eq_and, Set.mem_singleton_iff, ne_eq, and_imp, forall_exists_index]
     intro g n σ hg hg0
     subst hg
@@ -102,7 +102,7 @@ lemma exists_homog_gen_of_psi_isSingleDegGen (hI : IsSingleDegGen I) (h : IsPrin
     simp [isHomogeneous_zero, hb]
   · apply minDeg_mem' at hb
     specialize hb (isHomogeneous_of_isSingleDegGen hI)
-    rw [Set.mem_setOf] at hb
+    rw [Set.mem_ofPred] at hb
     use (homogeneousComponent (minDeg I) f)
     constructor
     · exact homogeneousComponent_isHomogeneous (minDeg I) f

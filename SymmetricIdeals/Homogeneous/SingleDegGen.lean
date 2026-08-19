@@ -143,7 +143,7 @@ theorem minDeg_homog' {S : Set (MvPolynomial α R)}
   refine le_antisymm ?_ ?_
   · refine Nat.sInf_le ?_
     simp only [ne_eq, Submodule.eq_bot_iff, Submodule.mem_inf, mem_homogeneousSubmodule,
-      Submodule.restrictScalars_mem, and_imp, not_forall, exists_prop, Set.mem_setOf_eq]
+      Submodule.restrictScalars_mem, and_imp, not_forall, exists_prop, Set.mem_ofPred_eq]
     obtain ⟨g, hgS, hg⟩ : ∃ g ∈ S, lowestDegree g = sInf (lowestDegree '' S) := by
       change sInf (lowestDegree '' S) ∈ lowestDegree '' S
       refine Nat.sInf_mem ?_
@@ -177,7 +177,7 @@ theorem minDeg_homog' {S : Set (MvPolynomial α R)}
       apply Finset.exists_ne_zero_of_sum_ne_zero at hg
       obtain ⟨k, hk, hg⟩ := hg
       simp [homogeneousComponent_of_mem hn] at hg
-      simp only [Finset.mem_antidiagonal, hg.1] at hk
+      simp only [Finset.HasAntidiagonal.mem_antidiagonal, hg.1] at hk
       rw [← hk]
       exact Nat.le_add_left n k.1
 
@@ -203,7 +203,7 @@ theorem homogComps_gen_singleDegGen_ideal {I : Ideal (MvPolynomial α R)}
     contrapose! hi
     refine Nat.sInf_le ?_
     simp only [ne_eq, Submodule.eq_bot_iff, Submodule.mem_inf, mem_homogeneousSubmodule,
-      Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_setOf_eq]
+      Submodule.restrictScalars_mem, and_imp, not_forall, Set.mem_ofPred_eq]
     use homogeneousComponent i f
     simp [hi, hif, homogeneousComponent_isHomogeneous]
 
