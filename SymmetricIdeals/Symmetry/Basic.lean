@@ -3,9 +3,14 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Upstream
+public import Mathlib
+
+/-!
+-/
+
+@[expose] public section
 
 variable {α R : Type*} [CommSemiring R]
 
@@ -92,6 +97,7 @@ lemma rename_isSymmetric {σ : Perm α} (h : IsSymmetric S) :
 
 
 /-- the symmetric closure of S -/
+noncomputable
 def symmSet (S : Set (MvPolynomial α R)) : Set (MvPolynomial α R) := ⋃ σ : Perm α, ((σ • ·) '' S)
 
 lemma mem_symmSet {f : MvPolynomial α R} :

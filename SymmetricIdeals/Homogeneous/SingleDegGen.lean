@@ -3,13 +3,18 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Homogeneous.Basic
-import SymmetricIdeals.Homogeneous.MinDeg
-import SymmetricIdeals.Homogeneous.Degree
-import SymmetricIdeals.Symmetry.Basic
-import SymmetricIdeals.Upstream
+public import Mathlib
+public import SymmetricIdeals.Homogeneous.Basic
+public import SymmetricIdeals.Homogeneous.MinDeg
+public import SymmetricIdeals.Homogeneous.Degree
+public import SymmetricIdeals.Symmetry.Basic
+
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial Rename
 
@@ -85,7 +90,7 @@ lemma homogSubI_strictMono (n : ℕ) {I J : Ideal (MvPolynomial α R)} (hmd : mi
   refine lt_of_le_of_ne (homogSubI_monotone n (le_of_lt hIJ)) ?_
   subst hn
   nth_rw 2 [hmd]
-  contrapose! hIJ
+  contrapose hIJ
   rw [hI, hJ, hIJ]
   exact lt_irrefl _
 

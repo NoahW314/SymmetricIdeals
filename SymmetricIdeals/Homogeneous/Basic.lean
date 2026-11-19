@@ -3,9 +3,14 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Upstream
+public import Mathlib
+
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial
 
@@ -35,7 +40,7 @@ theorem span_union_homogeneousComponent_image {S : Set (MvPolynomial α R)} (h :
 open Classical in
 lemma coeff_mul_single_homog {d : α →₀ ℕ} {n : ℕ}
     {f g : MvPolynomial α R} (hd : d.degree = n) (hg : g.IsHomogeneous n) :
-    coeff d (f * g) = coeff 0 f * coeff d g := by
+    (f * g).coeff d = f.coeff 0 * g.coeff d := by
   rw [coeff_mul]
   refine Finset.sum_eq_single_of_mem (0, d) ?_ (fun b hab hbd ↦ ?_)
   · rw [Finset.HasAntidiagonal.mem_antidiagonal, zero_add]
@@ -72,7 +77,7 @@ lemma exists_homog_finset_subset_of_mem {s : Set (MvPolynomial α R)} {f : MvPol
     ↑t ⊆ s ∧ Function.support φ ⊆ ↑t ∧ ∑ a ∈ t, φ a • a = f := by
   rw [Submodule.mem_span_iff_exists_finset_subset] at h
   obtain ⟨ψ, t, ht, hψt, hft⟩ := h
-  use (fun a ↦ coeff 0 (ψ a)), t, ht
+  use (fun a ↦ (ψ a).coeff 0), t, ht
   constructor
   · intro x hx
     apply hψt
@@ -104,7 +109,7 @@ lemma mem_span_homogeneousSubmodule {n m : ℕ} {f : MvPolynomial α R} (h : f.I
   rw [hc] at hnm
   obtain ⟨d, hdc, hdm⟩ := Finsupp.exists_le_degree_eq _ _ hnm
   obtain ⟨e, he⟩ := exists_add_of_le hdc
-  rw [← one_mul (coeff c f), he, ← monomial_mul_monomial]
+  rw [← one_mul (f.coeff c), he, ← monomial_mul_monomial]
   refine Ideal.mul_mem_right _ _ ?_
   refine Submodule.mem_span_of_mem ?_
   simp [isHomogeneous_monomial _ hdm]

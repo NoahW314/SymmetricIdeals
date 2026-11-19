@@ -3,16 +3,19 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Product.ProductMgs
-import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
+public import Mathlib
+public import SymmetricIdeals.Product.ProductMgs
+public import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
 
 /-!
 This module proves that for monomial ideals and ideals in a polynomial ring over a
   field with two variables, the following three things are equivalent:
   I is principal, I ^ 2 is a psi, I ^ n is a psi for all n
 -/
+
+@[expose] public section
 
 variable {α R : Type*} [CommSemiring R] [NoZeroDivisors R] {I : Ideal (MvPolynomial α R)}
 
@@ -28,9 +31,9 @@ lemma exists_eq_smul_of_dvd (p : MvPolynomial α R) {σ : Perm α} (h : p ∣ σ
   apply_fun totalDegree at hqd
   rw [totalDegree_mul_of_isDomain hp0, symm_totalDegree p σ,
     Nat.left_eq_add, totalDegree_eq_zero_iff_eq_C] at hqd
-  · use (coeff 0 q)
+  · use q.coeff 0
     rw [smul_eq_C_mul, ← hqd, mul_comm, hq]
-  · contrapose! hp0
+  · contrapose hp0
     rw [hp0, mul_zero] at hq
     exact (smul_eq_zero_iff_eq σ).mp hq
 
@@ -64,12 +67,12 @@ lemma mgs_eq_one_iff_kSymmetric (hI : IsSymmetric (SetLike.coe I))
       simp only [Set.mem_image, Set.mem_ofPred_eq]
       use {p}
       constructor
-      constructor
-      · simp only [Finset.mem_singleton, ne_eq]
-        contrapose! hIB
-        simp [hpI, ← hIB]
-      · simp only [hpI, Finset.coe_singleton]
-        exact symmSpan_eq_span_of_kSymmetric hp
+      · constructor
+        · simp only [Finset.mem_singleton, ne_eq]
+          contrapose hIB
+          simp [hpI, ← hIB]
+        · simp only [hpI, Finset.coe_singleton]
+          exact symmSpan_eq_span_of_kSymmetric hp
       · simp
     refine le_antisymm (Nat.sInf_le hpS) <| le_csInf ?_ ?_
     · use 1

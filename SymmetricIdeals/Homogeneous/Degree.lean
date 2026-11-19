@@ -3,10 +3,15 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Homogeneous.Basic
-import SymmetricIdeals.Upstream
+public import Mathlib
+public import SymmetricIdeals.Homogeneous.Basic
+
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial
 
@@ -103,8 +108,10 @@ lemma highestDegree_eq_totalDegree {p : MvPolynomial α R} : highestDegree p = p
     intro d hd
     refine le_csSup bddAbove_setOf_homogeneousComponent ?_
     rw [Finsupp.sum, Set.mem_ofPred_eq]
-    contrapose! hd
-    apply_fun (coeff d) at hd
+    contrapose hd
+    apply_fun AddMonoidAlgebra.coeff at hd
+    rw [Finsupp.ext_iff] at hd
+    specialize hd d
     simpa [coeff_homogeneousComponent, Finsupp.degree_apply] using hd
 
 theorem highestDegree_mul [NoZeroDivisors R] {p q : MvPolynomial α R} (hp : p ≠ 0) (hq : q ≠ 0) :

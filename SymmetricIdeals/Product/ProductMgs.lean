@@ -3,32 +3,73 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Homogeneous.MinimalGenerators
-import SymmetricIdeals.Homogeneous.SingleDegGen
-import SymmetricIdeals.Homogeneous.GradedMinimalGenerators
-import SymmetricIdeals.PrincipalSymmetric.OrderType
-import SymmetricIdeals.Symmetry.kSymmetric
-import SymmetricIdeals.Product.Monomial
-import SymmetricIdeals.SubmoduleSMul
-import SymmetricIdeals.Homogeneous.Degree
+public import Mathlib
+public import SymmetricIdeals.Homogeneous.MinimalGenerators
+public import SymmetricIdeals.Homogeneous.SingleDegGen
+public import SymmetricIdeals.Homogeneous.GradedMinimalGenerators
+public import SymmetricIdeals.PrincipalSymmetric.OrderType
+public import SymmetricIdeals.Symmetry.kSymmetric
+public import SymmetricIdeals.Product.Monomial
+public import SymmetricIdeals.SubmoduleSMul
+public import SymmetricIdeals.Homogeneous.Degree
+
+/-!
+-/
+
+@[expose] public section
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 
 open MvPolynomial Rename Equiv
 attribute [local instance] MvPolynomial.gradedAlgebra
 
+lemma smul_dvd_smul_of_dvd {α β : Type*} [Semigroup β] [SMul α β] [IsScalarTower α β β]
+    {b b' : β} (a : α) (h : b ∣ b') : a • b ∣ a • b' := by
+  obtain ⟨c, hc⟩ := h
+  rw [hc, ← smul_mul_assoc]
+  use c
 
-lemma dvd_iff_perm_dvd {p q : MvPolynomial α R} (σ : Equiv.Perm α) : p ∣ q ↔ σ • p ∣ σ • q := by
+lemma smul_dvd_smul_of_dvd' {α β : Type*} [Semigroup β] [SMul α β] [SMulDistribClass α β β]
+    {b b' : β} (a : α) (h : b ∣ b') : a • b ∣ a • b' := by
+  obtain ⟨c, hc⟩ := h
+  rw [hc, ← smul_eq_mul, smul_distrib_smul, smul_eq_mul]
+  use a • c
+
+lemma dvd_iff_smul_dvd_smul {α β : Type*} [Group α] [Semigroup β] [MulAction α β]
+    [IsScalarTower α β β] (a : α) (b b' : β) :
+    b ∣ b' ↔ a • b ∣ a • b' := by
   constructor
-  · intro ⟨r, h⟩
-    use σ • r
-    rw [h, smul_mul']
-  · intro ⟨r, h⟩
-    use σ⁻¹ • r
-    apply_fun (σ⁻¹ • ·) at h
-    rwa [smul_mul', inv_smul_smul, inv_smul_smul] at h
+  · exact smul_dvd_smul_of_dvd a
+  · intro h
+    rw [← one_smul α b, ← one_smul α b', ← inv_mul_cancel a, mul_smul, mul_smul]
+    exact smul_dvd_smul_of_dvd a⁻¹ h
+
+lemma dvd_iff_smul_dvd_smul' {α β : Type*} [Group α] [Semigroup β] [MulAction α β]
+    [SMulDistribClass α β β] (a : α) (b b' : β) :
+    b ∣ b' ↔ a • b ∣ a • b' := by
+  constructor
+  · exact smul_dvd_smul_of_dvd' a
+  · intro h
+    rw [← one_smul α b, ← one_smul α b', ← inv_mul_cancel a, mul_smul, mul_smul]
+    exact smul_dvd_smul_of_dvd' a⁻¹ h
+
+-- lemma dvd_nsmul_of_dvd' {R : Type*} [AddSemigroup R] {x y : R} (n : ℕ) (h : x ∣ y) :
+--     x ∣ n • y :=
+--   dvd_smul_of_dvd n h
+
+-- lemma dvd_zsmul_of_dvd' {R : Type*} [NonUnitalRing R] {x y : R} (z : ℤ) (h : x ∣ y) :
+--     x ∣ z • y :=
+--   dvd_smul_of_dvd z h
+
+-- #find_home smul_dvd_smul_of_dvd
+
+instance : SMulDistribClass (Perm α) (MvPolynomial α R) (MvPolynomial α R) where
+  smul_distrib_smul σ p q := by simp [symmAct_def]
+
+lemma dvd_iff_perm_dvd {p q : MvPolynomial α R} (σ : Equiv.Perm α) : p ∣ q ↔ σ • p ∣ σ • q :=
+  dvd_iff_smul_dvd_smul' σ p q
 
 lemma perm_mem_symmSet' {p q : MvPolynomial α R} (σ : Equiv.Perm α) [Fintype (symmSet {p})]
     (h : q ∈ (symmSet {p}).toFinset.val) : σ • q ∈ (symmSet {p}).toFinset.val := by
@@ -299,7 +340,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
   have hpq : q ∣ p := by simp [q, Multiset.gcd_dvd]
   obtain ⟨p', hpq⟩ := hpq
   have hp0 : p ≠ 0 := by
-    contrapose! hpk
+    contrapose hpk
     simp [hpk]
   have hp'h := isHomogeneous_totalDegree' hpq hp hp0
   have hqh := isHomogeneous_totalDegree hpq hp hp0
@@ -311,7 +352,7 @@ theorem max_mgs_le_mgs_prod {p : MvPolynomial α R} {n : ℕ} {J : Ideal (MvPoly
       simp only [← irreducible_iff_prime]
       refine WfDvdMonoid.exists_irreducible_factor ?_ hp0'
       rw [isUnit_iff_eq_C_of_isReduced]
-      contrapose! hpk
+      contrapose hpk
       obtain ⟨r, hr, hrp'⟩ := hpk
       rw [hpq, hrp']
       exact kSymmetric_C_mul' r hq
@@ -419,10 +460,10 @@ theorem max_mgs_le_mgs_prod_psi {p q : MvPolynomial α R} {n m : ℕ} (hp : p.Is
     minGenSize ((symmSpan {p}) * (symmSpan {q})) := by
   refine Nat.add_le_of_le_sub ?_ ?_
   · refine mgs_pos <| mul_ne_zero ?_ ?_
-    · contrapose! hpk
+    · contrapose hpk
       rw [symmSpan, Ideal.zero_eq_bot, Ideal.span_eq_bot] at hpk
       simp [hpk p mem_symmSet_singleton_self]
-    · contrapose! hqk
+    · contrapose hqk
       rw [symmSpan, Ideal.zero_eq_bot, Ideal.span_eq_bot] at hqk
       simp [hqk q mem_symmSet_singleton_self]
   · refine max_le ?_ ?_

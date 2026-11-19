@@ -3,11 +3,17 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Symmetry.Basic
-import SymmetricIdeals.Symmetry.kSymmetric
-import SymmetricIdeals.Upstream
+public import Mathlib
+public import SymmetricIdeals.Symmetry.Basic
+public import SymmetricIdeals.Symmetry.kSymmetric
+
+/-!
+
+-/
+
+@[expose] public section
 
 variable {R S : Type*} [CommSemiring R] [Semiring S] [Module R S] [SMulCommClass R S S]
   [IsScalarTower R S S]

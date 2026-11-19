@@ -3,8 +3,14 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
+public import Mathlib
+
+/-!
+-/
+
+@[expose] public section
 
 variable {R : Type*} [Semiring R]
 

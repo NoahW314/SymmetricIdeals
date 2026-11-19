@@ -3,10 +3,15 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Homogeneous.Basic
-import SymmetricIdeals.Upstream
+public import Mathlib
+public import SymmetricIdeals.Homogeneous.Basic
+
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial
 

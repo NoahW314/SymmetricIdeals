@@ -3,12 +3,18 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Homogeneous.GradedMinimalGenerators
-import SymmetricIdeals.Symmetry.Basic
-import SymmetricIdeals.Symmetry.Homogeneous
-import SymmetricIdeals.PrincipalSymmetric.OrderType
+public import Mathlib
+public import SymmetricIdeals.Homogeneous.GradedMinimalGenerators
+public import SymmetricIdeals.Symmetry.Basic
+public import SymmetricIdeals.Symmetry.Homogeneous
+public import SymmetricIdeals.PrincipalSymmetric.OrderType
+
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial Rename Equiv
 
@@ -57,12 +63,12 @@ theorem symmSpan_lt_span_orderTypeComponent {p : MvPolynomial α R} {a : Multise
   suffices monomial d (1 : R) ∈ Ideal.span (orderTypeComponent α R a) ∧
       monomial d (1 : R) ∉ symmSpan {p} by
     obtain ⟨hmi, hms⟩ := this
-    contrapose! hms
+    contrapose hms
     rwa [hms]
   constructor
   · refine Submodule.mem_span_of_mem ?_
     simp [orderTypeComponent, IsStronglyHomogeneous, hp hd0]
-  contrapose! hd0
+  contrapose hd0
   apply evalOne_eq_zero_of_mem_symmSpan at hd0
   · simp at hd0
   simp [hp1]
@@ -96,7 +102,7 @@ lemma orderTypes_sum_subset' {φ : Equiv.Perm α →₀ R} {g : MvPolynomial α 
 
 lemma orderTypes_sum_support_eq_orderTypes_finsupp_sum {f p : MvPolynomial α R}
     {c : Perm α →₀ R} (h : (c.sum (fun i a ↦ a • i • f)) = p) :
-    orderTypes (∑ d : f.support with orderType d.1 ∈ orderTypes p, (monomial d.1) (coeff d f)) =
+    orderTypes (∑ d : f.support with orderType d.1 ∈ orderTypes p, (monomial d.1) (f.coeff d)) =
     orderTypes p := by
   classical
   ext s
@@ -177,10 +183,10 @@ lemma split_orderTypes {f p : MvPolynomial α R} {n : ℕ} (hf : f.IsHomogeneous
   rw [symmSet_singleton_eq_range, Finsupp.mem_span_range_iff_exists_finsupp] at hfp
   obtain ⟨c, hc⟩ := hfp
   let S := {d : f.support | orderType d.1 ∈ orderTypes p}
-  have hfpq : f = (∑ d ∈ S, monomial d (coeff d f)) + (f - (∑ d ∈ S, monomial d (coeff d f))) := by
+  have hfpq : f = (∑ d ∈ S, monomial d (f.coeff d)) + (f - (∑ d ∈ S, monomial d (f.coeff d))) := by
     ring
-  use ∑ d ∈ S, monomial d (coeff d f), f - (∑ d ∈ S, monomial d (coeff d f))
-  have hotp : orderTypes (∑ d ∈ S.toFinset, (monomial d.1) (coeff d f)) = orderTypes p := by
+  use ∑ d ∈ S, monomial d (f.coeff d), f - (∑ d ∈ S, monomial d (f.coeff d))
+  have hotp : orderTypes (∑ d ∈ S.toFinset, (monomial d.1) (f.coeff d)) = orderTypes p := by
     simp only [Set.toFinset_ofPred, S]
     exact orderTypes_sum_support_eq_orderTypes_finsupp_sum hc
   constructor
@@ -188,13 +194,13 @@ lemma split_orderTypes {f p : MvPolynomial α R} {n : ℕ} (hf : f.IsHomogeneous
   constructor
   · exact hotp
   have hpq : Disjoint (orderTypes p)
-      (orderTypes (f - ∑ d ∈ S.toFinset, (monomial d.1) (coeff d f))) := by
+      (orderTypes (f - ∑ d ∈ S.toFinset, (monomial d.1) (f.coeff d))) := by
     rw [← Finset.disjoint_coe, ← Set.subset_compl_iff_disjoint_right]
     intro s
     simp only [orderTypes, Finset.coe_image, Set.mem_image, SetLike.mem_coe, mem_support_iff, ne_eq,
       Set.mem_compl_iff, coeff_sub, not_exists, not_and, forall_exists_index, and_imp]
     intro d hdc hd e he
-    contrapose! he
+    contrapose he
     rw [coeff_sum]
     by_cases! hef : e ∈ f.support
     · have hef2 : ⟨e, hef⟩ ∈ S := by
@@ -208,13 +214,13 @@ lemma split_orderTypes {f p : MvPolynomial α R} {n : ℕ} (hf : f.IsHomogeneous
       grind [coeff_monomial]
   constructor
   · exact hpq
-  contrapose!
+  contrapose
   intro hp0
-  have hpsum : p = (∑ σ ∈ c.support, c σ • σ • (∑ d ∈ S.toFinset, (monomial d) (coeff d f))) +
-      (∑ σ ∈ c.support, c σ • σ • (f - ∑ d ∈ S.toFinset, (monomial d) (coeff d f))) := by
+  have hpsum : p = (∑ σ ∈ c.support, c σ • σ • (∑ d ∈ S.toFinset, (monomial d) (f.coeff d))) +
+      (∑ σ ∈ c.support, c σ • σ • (f - ∑ d ∈ S.toFinset, (monomial d) (f.coeff d))) := by
     simp [← Finset.sum_add_distrib, ← smul_add, ← hc, Finsupp.sum]
   rw [hpsum]
-  suffices ∑ σ ∈ c.support, c σ • σ • (f - ∑ d ∈ S.toFinset, (monomial d) (coeff d f)) = 0 by
+  suffices ∑ σ ∈ c.support, c σ • σ • (f - ∑ d ∈ S.toFinset, (monomial d) (f.coeff d)) = 0 by
     simp [this, add_zero, map_sum, evalOne_perm, hp0]
   refine eq_zero_of_disjoint_add hpsum (Disjoint.mono_right orderTypes_sum_subset' hpq) ?_
   refine Disjoint.mono orderTypes_sum_subset' orderTypes_sum_subset' ?_
@@ -225,7 +231,7 @@ theorem not_psi_of_nonzero_disjoint_orderTypes [NoZeroDivisors R]
     (hp₁ : p₁.IsHomogeneous (minDeg I)) (hp₂ : p₂.IsHomogeneous (minDeg I)) (hp₁z : evalOne p₁ ≠ 0)
     (hp₂z : evalOne p₂ ≠ 0) (h : Disjoint (orderTypes p₁) (orderTypes p₂))
     (hIp₁ : p₁ ∈ I) (hIp₂ : p₂ ∈ I) : ¬IsPrincipalSymmetric I := by
-  by_contra! hpsi
+  by_contra hpsi
   obtain ⟨f, hf, hpsi⟩ := exists_homog_gen_of_psi_isSingleDegGen hI hpsi
   rw [hpsi] at hIp₁ hIp₂
   obtain ⟨p₁', q₁, hs₁, hoe₁, hod₁, he₁⟩ := split_orderTypes hf hp₁ hIp₁

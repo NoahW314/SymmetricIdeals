@@ -3,12 +3,18 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Symmetry.kSymmetric
-import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
-import SymmetricIdeals.PrincipalSymmetric.MonomialPsi
+public import Mathlib
+public import SymmetricIdeals.Symmetry.kSymmetric
+public import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
+public import SymmetricIdeals.PrincipalSymmetric.MonomialPsi
 import SymmetricIdeals.Upstream
+
+/-!
+-/
+
+@[expose] public section
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 
@@ -120,10 +126,10 @@ theorem monomialProduct_Psi {R : Type*} [CommRing R] [NoZeroDivisors R]
     rw [hm]
     exact Nat.sSup_range_ne_zero hb0
   have hxi : x ≠ i := by
-    contrapose! ha
+    contrapose ha
     rwa [← ha]
   have hyj : y ≠ j := by
-    contrapose! hb
+    contrapose hb
     rwa [← hb]
   obtain ⟨σ, hσx, hσi⟩ := exists_mapDomain b hxi hyj
   let c := Finsupp.mapDomain σ b
@@ -157,9 +163,9 @@ theorem monomialProduct_Psi {R : Type*} [CommRing R] [NoZeroDivisors R]
         have hc2 : c x ≥ c ((swap x i) z) := by
           rw [hσx, hm]
           unfold m
-          rw [← range_mapDomain_of_equiv σ]
+          rw [← Finsupp.range_mapDomain_of_equiv σ]
           refine le_csSup ?_ ?_
-          · rw [← range_mapDomain_of_equiv σ]
+          · rw [← Finsupp.range_mapDomain_of_equiv σ]
             exact (Finsupp.finite_range _).bddAbove
           · simp only [c, Set.mem_range, exists_apply_eq_apply]
         apply Nat.add_lt_add_of_lt_of_le (Nat.zero_lt_of_ne_zero hax0) at hc2

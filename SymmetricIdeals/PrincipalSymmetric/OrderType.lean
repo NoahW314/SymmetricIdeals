@@ -3,13 +3,19 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Symmetry.Basic
-import SymmetricIdeals.Homogeneous.MinimalGenerators
-import SymmetricIdeals.Homogeneous.SingleDegGen
+public import Mathlib
+public import SymmetricIdeals.Symmetry.Basic
+public import SymmetricIdeals.Homogeneous.MinimalGenerators
+public import SymmetricIdeals.Homogeneous.SingleDegGen
 
-open MvPolynomial Equiv Rename
+/-!
+-/
+
+@[expose] public section
+
+open MvPolynomial Equiv Rename AddMonoidAlgebra
 
 variable {α R : Type*} [CommSemiring R]
 
@@ -27,7 +33,7 @@ lemma orderType_empty_iff {d : α →₀ ℕ} : orderType d = ∅ ↔ d = 0 := b
 namespace MvPolynomial
 
 def IsStronglyHomogeneous (p : MvPolynomial α R) (a : Multiset ℕ) :=
-  ∀ ⦃d⦄, coeff d p ≠ 0 → (orderType d) = a
+  ∀ ⦃d⦄, p.coeff d ≠ 0 → (orderType d) = a
 
 end MvPolynomial
 
@@ -46,7 +52,7 @@ lemma isStronglyHomogeneous_empty_iff {p : MvPolynomial α R} :
   constructor
   · intro h
     simp_rw [IsStronglyHomogeneous, orderType_empty_iff] at h
-    use coeff 0 p
+    use coeff p 0
     ext d
     classical rw [coeff_C]
     grind
@@ -67,7 +73,7 @@ lemma isHomogeneous_of_isStronglyHomogeneous {p : MvPolynomial α R} (a : Multis
 lemma isStronglyHomogeneous_add {p q : MvPolynomial α R} (a : Multiset ℕ)
     (hp : IsStronglyHomogeneous p a) (hq : IsStronglyHomogeneous q a) :
     IsStronglyHomogeneous (p + q) a := by
-  simp_all only [IsStronglyHomogeneous, coeff_add]
+  simp_all only [IsStronglyHomogeneous, coeff_add, Finsupp.add_apply]
   grind [zero_add]
 
 @[simp]
@@ -77,9 +83,10 @@ lemma isStronglyHomogeneous_zero (a : Multiset ℕ) :
 
 lemma isStronglyHomogeneous_smul (a : Multiset ℕ) (c : R) {p : MvPolynomial α R}
     (h : IsStronglyHomogeneous p a) : IsStronglyHomogeneous (c • p) a := by
-  simp only [IsStronglyHomogeneous, ne_eq, coeff_smul, smul_eq_mul] at ⊢ h
+  simp only [IsStronglyHomogeneous, ne_eq, AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply,
+    smul_eq_mul] at ⊢ h
   intro d hd
-  by_cases! hdp : coeff d p = 0
+  by_cases! hdp : coeff p d = 0
   · simp [hdp] at hd
   · exact h hdp
 
@@ -173,7 +180,7 @@ lemma orderTypeComponent_eq_span {a : Multiset ℕ} : orderTypeComponent α R a 
     rw [as_sum p]
     refine Submodule.sum_mem _ ?_
     intro d hd
-    rw [← mul_one (coeff d p), ← smul_eq_mul, ← smul_monomial]
+    rw [← mul_one (coeff p d), ← smul_eq_mul, ← smul_monomial]
     refine Submodule.smul_mem _ _ ?_
     refine Submodule.mem_span_of_mem ?_
     simp only [Set.mem_image, Set.mem_ofPred_eq]
@@ -261,7 +268,7 @@ lemma permutation_of_orderType_eq' {n : ℕ} (d e : α →₀ ℕ) (hc : (orderT
       by_cases hzd : z ∈ d.support
       · suffices (Equiv.symm τ) z ≠ y by simpa [this] using hτ
         rw [Finsupp.mem_support_iff] at hzd
-        contrapose! hzd
+        contrapose hzd
         symm
         simpa [hzd] using hτ
       · rw [Finsupp.notMem_support_iff] at hzd
@@ -273,7 +280,7 @@ lemma permutation_of_orderType_eq' {n : ℕ} (d e : α →₀ ℕ) (hc : (orderT
             not_or, Decidable.not_not]
           constructor
           · rw [← hzy]
-            contrapose! hzx
+            contrapose hzx
             symm
             apply_fun τ at hzx
             simpa using hzx
@@ -318,7 +325,7 @@ lemma exists_symmSpan_monomial_eq_span_orderTypeComponent {a : Multiset ℕ}
     {p : MvPolynomial α R} (hp0 : p ≠ 0) (hp : p.IsStronglyHomogeneous a) :
     ∃ d : α →₀ ℕ, symmSpan {monomial d (1 : R)} = Ideal.span (orderTypeComponent α R a) := by
   have h10 : (1 : R) ≠ 0 := by
-    contrapose! hp0
+    contrapose hp0
     symm at hp0
     rw [subsingleton_iff_zero_eq_one] at hp0
     exact Subsingleton.eq_zero p
@@ -353,7 +360,7 @@ abbrev orderTypes (p : MvPolynomial α R) := Finset.image orderType p.support
 lemma orderTypes_zero : orderTypes (0 : MvPolynomial α R) = ∅ := by
   simp
 
-lemma mem_orderTypes_of_coeff_ne_zero {p : MvPolynomial α R} {d : α →₀ ℕ} (h : coeff d p ≠ 0) :
+lemma mem_orderTypes_of_coeff_ne_zero {p : MvPolynomial α R} {d : α →₀ ℕ} (h : coeff p d ≠ 0) :
     orderType d ∈ orderTypes p := by
   simp only [orderTypes, Finset.mem_image, mem_support_iff, ne_eq]
   use d
@@ -395,7 +402,7 @@ lemma orderTypes_monomial [Nontrivial R] {d : α →₀ ℕ} :
 
 lemma orderTypes_disjoint_iff {p q : MvPolynomial α R} :
     Disjoint (orderTypes p) (orderTypes q) ↔
-    ∀ d e : α →₀ ℕ, coeff d p ≠ 0 → coeff e q ≠ 0 → orderType d ≠ orderType e := by
+    ∀ d e : α →₀ ℕ, coeff p d ≠ 0 → coeff q e ≠ 0 → orderType d ≠ orderType e := by
   rw [Finset.disjoint_iff_ne]
   contrapose!
   constructor
@@ -420,12 +427,19 @@ lemma orderTypes_add_subset {p q : MvPolynomial α R} :
   simp only [Finset.mem_image, mem_support_iff, coeff_add, ne_eq, Finset.mem_union,
     forall_exists_index, and_imp]
   intro d hdc hds
-  by_cases! hdz : coeff d p ≠ 0
+  by_cases! hdz : coeff p d ≠ 0
   · left
     use d
-  · rw [hdz, zero_add] at hdc
+  · rw [Finsupp.add_apply, hdz, zero_add] at hdc
     right
     use d
+
+-- these should be removed soon once a mathlib PR gets merged
+instance {α β : Type*} [Zero β] : IsZeroApply (α →₀ β) where
+  zero_apply a := by simp
+
+instance {α β : Type*} [AddZeroClass β] : IsAddApply (α →₀ β) where
+  add_apply f g a := by simp
 
 lemma orderTypes_sum_subset {X : Type*} {s : Finset X} {f : X → MvPolynomial α R} :
     orderTypes (∑ x ∈ s, f x) ⊆ s.biUnion (fun x ↦ orderTypes (f x)) := by
@@ -433,7 +447,7 @@ lemma orderTypes_sum_subset {X : Type*} {s : Finset X} {f : X → MvPolynomial �
   simp only [Finset.mem_image, mem_support_iff, ne_eq, Finset.mem_biUnion, forall_exists_index,
     and_imp]
   intro d hd hda
-  rw [coeff_sum] at hd
+  rw [AddMonoidAlgebra.coeff_sum, sum_apply] at hd
   obtain ⟨x, hx, hdx⟩ := Finset.exists_ne_zero_of_sum_ne_zero hd
   use x
   constructor
@@ -452,11 +466,11 @@ lemma orderTypes_add {p q : MvPolynomial α R} (h : Disjoint (orderTypes p) (ord
   obtain ⟨d, hdp, hds⟩ := hsp
   use d
   constructor
-  · contrapose! hsq
+  · contrapose hsq
     rw [← hds]
     refine mem_orderTypes_of_coeff_ne_zero ?_
     contrapose! hsq
-    rw [hsq, add_zero]
+    rw [Finsupp.add_apply, hsq, add_zero]
     exact hdp
   · exact hds
 
@@ -560,7 +574,7 @@ lemma orderTypes_sub_subset {p q : MvPolynomial α R} (h : orderTypes p ⊆ orde
   intro s hs
   simp only [Finset.mem_image, mem_support_iff, coeff_sub, ne_eq] at hs
   obtain ⟨d, hdpq, hs⟩ := hs
-  by_cases hd : coeff d p = 0
+  by_cases hd : coeff p d = 0
   · simp only [Finset.mem_image, mem_support_iff, ne_eq]
     use d
     constructor

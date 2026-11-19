@@ -3,10 +3,16 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Symmetry.Basic
-import SymmetricIdeals.Homogeneous.SingleDegGen
+public import Mathlib
+public import SymmetricIdeals.Symmetry.Basic
+public import SymmetricIdeals.Homogeneous.SingleDegGen
+
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial Rename Equiv
 
@@ -117,7 +123,7 @@ lemma exists_homog_gen_of_psi_isSingleDegGen (hI : IsSingleDegGen I) (h : IsPrin
       rw [this]
       congr 1
       have hfz : homogeneousComponent (minDeg I) f ≠ 0 := by
-        contrapose! hb
+        contrapose hb
         rw [this, hb, symmSpan_zero, ← Submodule.zero_eq_bot]
         simp [Submodule.zero_eq_bot]
       rw [symmSpan, minDeg_homog]

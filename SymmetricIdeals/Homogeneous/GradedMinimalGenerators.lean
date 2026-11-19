@@ -3,13 +3,17 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Homogeneous.MinDeg
-import SymmetricIdeals.Homogeneous.SingleDegGen
-import SymmetricIdeals.Homogeneous.MinimalGenerators
-import SymmetricIdeals.Upstream
+public import Mathlib
+public import SymmetricIdeals.Homogeneous.MinDeg
+public import SymmetricIdeals.Homogeneous.SingleDegGen
+public import SymmetricIdeals.Homogeneous.MinimalGenerators
 
+/-!
+-/
+
+@[expose] public section
 
 open MvPolynomial
 
@@ -53,10 +57,10 @@ lemma finrank_mem_minDeg (h : IsSingleDegGen I) :
   rw [Submodule.span_eq] at hspan hcard
   use S
   constructor
-  constructor
-  · apply LinearIndepOn.zero_notMem_image at hlid
-    simpa using hlid
-  · rw [h, ← hspan, Ideal.span, Submodule.span_span_of_tower]
+  · constructor
+    · apply LinearIndepOn.zero_notMem_image at hlid
+      simpa using hlid
+    · rw [h, ← hspan, Ideal.span, Submodule.span_span_of_tower]
   · rw [hcard]
 
 theorem mgs_le_finrank (h : IsSingleDegGen I) : minGenSize I ≤

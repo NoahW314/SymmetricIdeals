@@ -3,9 +3,15 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.Symmetry.Basic
+public import Mathlib
+public import SymmetricIdeals.Symmetry.Basic
+
+/-!
+-/
+
+@[expose] public section
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 
@@ -53,7 +59,7 @@ lemma perm_eq_c_perm_of_kSymmetric {p : MvPolynomial α R} (h : kSymmetric p) :
 
 lemma symmSpan_ne_bot_of_not_kSymmetric {p : MvPolynomial α R} (h : ¬kSymmetric p) :
     symmSpan {p} ≠ ⊥ := by
-  contrapose! h
+  contrapose h
   rw [symmSpan_eq_bot_iff] at h
   simp [h]
 

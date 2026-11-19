@@ -3,9 +3,15 @@ Copyright (c) 2026 Noah Walker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Noah Walker
 -/
+module
 
-import Mathlib
-import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
+public import Mathlib
+public import SymmetricIdeals.PrincipalSymmetric.PsiObstructions
+
+/-!
+-/
+
+@[expose] public section
 
 variable {α R : Type*} [CommSemiring R] {I : Ideal (MvPolynomial α R)}
 attribute [local instance] MvPolynomial.gradedAlgebra
@@ -56,11 +62,11 @@ lemma le_symmSpan_of_le_sup_symmSpan {S : Finset (Multiset ℕ)} {a : S} {g : S 
       exact (homogSubI_span _ _ <| symmSet_subset_homogSub_of_isHomogeneous (hgh b)).symm
     simp_rw [hb]
     rw [← homogSubI_iSup, homogeneousSubmoduleI, Submodule.mem_inf, mem_homogeneousSubmodule]
-    constructor
-    · exact isHomogeneous_of_isStronglyHomogeneous a hpsh
-    · rwa [Submodule.restrictScalars_mem]
-    intro b
-    exact isHomogeneous_of_isSingleDegGen (isSingleDegGen_symmSpan (hgh b))
+    · constructor
+      · exact isHomogeneous_of_isStronglyHomogeneous a hpsh
+      · rwa [Submodule.restrictScalars_mem]
+    · intro b
+      exact isHomogeneous_of_isSingleDegGen (isSingleDegGen_symmSpan (hgh b))
   rw [Submodule.mem_iSup_iff_exists_finsupp] at hp
   obtain ⟨φ, hφ, hp⟩ := hp
   suffices ∀ i : S, i ≠ a → φ i = 0 by
@@ -107,7 +113,7 @@ theorem isStronglyHomogeneous_of_monomial_ideal {p : MvPolynomial α R} (n : ℕ
   · use 0
     simp [hp0]
   let g : (orderTypes p) → MvPolynomial α R :=
-    fun a => ∑ d ∈ p.support with orderType d = a, monomial d (coeff d p)
+    fun a => ∑ d ∈ p.support with orderType d = a, monomial d (p.coeff d)
   have hgp : p = ∑ a, g a := by
     simp only [Finset.univ_eq_attach, Finset.sum_filter, g]
     nth_rw 1 [Finset.sum_comm, as_sum p]
@@ -117,8 +123,8 @@ theorem isStronglyHomogeneous_of_monomial_ideal {p : MvPolynomial α R} (n : ℕ
     have hd : orderType d ∈ orderTypes p := by
       rw [mem_support_iff] at hd'
       exact mem_orderTypes_of_coeff_ne_zero hd'
-    nth_rw 2 [show monomial d (coeff d p) = if orderType d =
-      (⟨orderType d, hd⟩ : orderTypes p).1 then monomial d (coeff d p) else 0 by simp]
+    nth_rw 2 [show monomial d (p.coeff d) = if orderType d =
+      (⟨orderType d, hd⟩ : orderTypes p).1 then monomial d (p.coeff d) else 0 by simp]
     exact Finset.sum_eq_single_of_mem _ (Finset.mem_univ _) (by grind)
   have hgsh : ∀ a, IsStronglyHomogeneous (g a) a := by
     intro a d hd
@@ -139,7 +145,7 @@ theorem isStronglyHomogeneous_of_monomial_ideal {p : MvPolynomial α R} (n : ℕ
     simp only [Finset.mem_image, mem_support_iff, ne_eq] at ha
     obtain ⟨d, hd⟩ := ha
     use d
-    simp [g, coeff_sum, hd]
+    simp [g, hd]
   have hgd : ∀ a b, a ≠ b → Disjoint (orderTypes (g a)) (orderTypes (g b)) := by
     intro a b hab
     rw [(orderTypes_singleton_iff_isStronglyHomogeneous (hgz a)).mpr (hgsh a)]
@@ -152,7 +158,7 @@ theorem isStronglyHomogeneous_of_monomial_ideal {p : MvPolynomial α R} (n : ℕ
     simp only [Finset.mem_filter, and_imp]
     intro d hd hda
     suffices monomial d 1 ∈ Ideal.span (symmSet {p}) by
-      apply Submodule.smul_mem _ (C (coeff d p)) at this
+      apply Submodule.smul_mem _ (C (p.coeff d)) at this
       simpa [C_mul_monomial] using this
     obtain ⟨T, hT⟩ := hm
     unfold symmSpan at hT
@@ -197,7 +203,7 @@ theorem monomial_iff_symmSpan_monomial (h : IsPrincipalSymmetric I) (hI : IsSing
     obtain ⟨p, hph, hp⟩ := exists_homog_gen_of_psi_isSingleDegGen hI h
     rw [hp] at hm
     have hp0 : p ≠ 0 := by
-      contrapose! hIB
+      contrapose hIB
       simp [hp, hIB]
     apply isStronglyHomogeneous_of_monomial_ideal (minDeg I) hm at hph
     obtain ⟨a, hsh⟩ := hph
